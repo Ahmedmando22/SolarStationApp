@@ -27,7 +27,7 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Check Available Tasks
+      - name: Build Android App (APK)
         run: |
           BUILD_FILE_PATH=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
           if [ -z "$BUILD_FILE_PATH" ]; then
@@ -37,5 +37,12 @@ jobs:
           PROJECT_DIR=$(dirname "$BUILD_FILE_PATH")
           cd "$PROJECT_DIR"
           
-          # أمر لطباعة كل المهام المتاحة في المشروع لنعرف المشكلة
-          gradle tasks --all
+          # تشغيل أمر بناء حزمة الأندرويد داخل مجلد التطبيق الفرعي مباشرة
+          gradle :app:assembleDebug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: solar-station-app
+          path: |
+            **/build/outputs/apk/debug/*.apk
