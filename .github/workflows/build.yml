@@ -22,31 +22,21 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle and Generate Wrapper
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7' # يقوم بتوفير نسخة Gradle جاهزة تلقائياً
+
+      - name: Build Android App
         run: |
-          # تثبيت أداة gradle على نظام التشغيل لتوليد الملفات الناقصة
-          sudo apt-get update && sudo apt-get install -y gradle
-          
-          # البحث عن المجلد الذي يحتوي على ملف build.gradle
+          # البحث عن مجلد المشروع وتشغيل أمر البناء بداخله مباشرة
           BUILD_FILE_PATH=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
-          
           if [ -z "$BUILD_FILE_PATH" ]; then
-            echo "Error: No build.gradle file found in the project!"
+            echo "Error: Project build.gradle not found!"
             exit 1
           fi
-          
           PROJECT_DIR=$(dirname "$BUILD_FILE_PATH")
-          echo "Found project directory at: $PROJECT_DIR"
-          
-          # الانتقال لمجلد المشروع وتوليد ملف gradlew الناقص
           cd "$PROJECT_DIR"
-          gradle wrapper
-          chmod +x gradlew
           
-          # حفظ المسار لاستخدامه في الخطوة التالية
-          echo "GRADLEW_DIR=$GITHUB_WORKSPACE/$PROJECT_DIR" >> $GITHUB_ENV
-
-      - name: Build Android App with Gradle
-        run: |
-          cd ${{ env.GRADLEW_DIR }}
-          ./gradlew assembleDebug
+          # استخدام أداة gradle المثبتة تلقائياً لبناء التطبيق
+          gradle assembleDebug
