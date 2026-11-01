@@ -1,0 +1,2482 @@
+﻿<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0c4a6e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/icon-192.png" type="image/png">
+    <title>نظام إدارة قراءات محطات الطاقة الشمسية Pro 2026</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f1f5f9;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #e2e8f0; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        .gradient-header {
+            background: linear-gradient(135deg, #0f172a 0%, #0c4a6e 60%, #0284c7 100%);
+        }
+
+        .sticky-col {
+            position: sticky;
+            right: 0;
+            background-color: #f8fafc;
+            z-index: 10;
+        }
+
+        tfoot .sticky-col {
+            background-color: #0f172a;
+        }
+
+        /* حقول رقمية عادية بدون أزرار الزيادة والنقص */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            transition: box-shadow 0.2s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
+        }
+
+        table input[type="number"],
+        table input[type="text"] {
+            transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+        }
+        table input[type="number"]:focus,
+        table input[type="text"]:focus {
+            background: #f0f9ff !important;
+        }
+
+        .stat-card {
+            transition: transform 0.15s ease, background 0.15s;
+        }
+        .stat-card:hover {
+            transform: translateY(-1px);
+        }
+
+        #monthlyTableBody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        #monthlyTableBody tr:hover {
+            background-color: #e0f2fe !important;
+        }
+
+        .btn-primary {
+            transition: transform 0.12s ease, box-shadow 0.12s;
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .save-toast {
+            position: fixed;
+            bottom: 1.25rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(120%);
+            background: #0f172a;
+            color: #fff;
+            padding: 0.6rem 1.25rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 100;
+            opacity: 0;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            pointer-events: none;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        .save-toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+            .card { box-shadow: none; border: 1px solid #cbd5e1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800 antialiased">
+
+    <!-- Header -->
+    <header class="gradient-header text-white shadow-lg sticky top-0 z-40 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3 sm:py-4">
+            <div class="flex items-center justify-between gap-3">
+                
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMobileMenu()" class="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 transition">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <div class="w-11 h-11 rounded-xl bg-amber-400 text-slate-900 flex items-center justify-center shadow">
+                        <i class="fa-solid fa-solar-panel text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base sm:text-lg font-extrabold leading-tight">محطات Fresh الشمسية</h1>
+                        <p class="text-[11px] text-sky-200 hidden sm:block">إدارة القراءات والتجميع التلقائي · تقرير 2026</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center bg-white/15 rounded-xl px-2.5 py-1.5 gap-1.5">
+                        <i class="fa-solid fa-bolt text-amber-300 text-xs"></i>
+                        <select id="unitSelector" onchange="changeUnit(this.value)" class="bg-transparent text-white font-bold text-sm focus:outline-none cursor-pointer">
+                            <option value="MWh" class="bg-slate-800">MWh</option>
+                            <option value="kWh" class="bg-slate-800">kWh</option>
+                        </select>
+                    </div>
+
+                    <button onclick="exportAllDataJSON()" title="نسخة احتياطية" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 transition">
+                        <i class="fa-solid fa-download"></i>
+                    </button>
+                    <label title="استيراد" class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 transition cursor-pointer">
+                        <i class="fa-solid fa-upload"></i>
+                        <input type="file" id="jsonInput" onchange="importDataJSON(event)" class="hidden" accept=".json">
+                    </label>
+                    <button onclick="resetDataWithConfirmation()" title="إعادة تعيين" class="w-10 h-10 flex items-center justify-center rounded-xl bg-rose-500/25 hover:bg-rose-500/40 text-rose-100 transition">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <div class="bg-slate-900 text-white border-b border-slate-800 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div class="bg-slate-800/70 rounded-xl p-3 text-center stat-card">
+                    <div class="text-[11px] text-slate-400 mb-1">القدرة الإجمالية</div>
+                    <div class="text-lg font-extrabold text-amber-400"><span id="globalCapacityVal">0</span> <span class="text-xs font-normal text-slate-400">kWp</span></div>
+                </div>
+                <div class="bg-slate-800/70 rounded-xl p-3 text-center stat-card">
+                    <div class="text-[11px] text-slate-400 mb-1">الإنتاج الفعلي</div>
+                    <div class="text-lg font-extrabold text-sky-400"><span id="globalActualVal">0</span> <span class="unitLabel text-xs font-normal text-slate-400">MWh</span></div>
+                </div>
+                <div class="bg-slate-800/70 rounded-xl p-3 text-center stat-card">
+                    <div class="text-[11px] text-slate-400 mb-1">المستهدف السنوي</div>
+                    <div class="text-lg font-extrabold text-amber-300"><span id="globalTargetVal">0</span> <span class="unitLabel text-xs font-normal text-slate-400">MWh</span></div>
+                </div>
+                <div class="bg-slate-800/70 rounded-xl p-3 text-center stat-card">
+                    <div class="text-[11px] text-slate-400 mb-1">نسبة الإنجاز</div>
+                    <div class="text-lg font-extrabold text-emerald-400" id="globalAchievedPct">0%</div>
+                </div>
+                <div class="bg-slate-800/70 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
+                    <div class="text-[11px] text-slate-400 mb-1">المحطات الفرعية</div>
+                    <div class="text-lg font-extrabold text-indigo-400" id="globalStationCount">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 py-5 flex-grow w-full">
+        <div id="drawerOverlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden"></div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+            <!-- Sidebar -->
+            <aside id="sidebarDrawer" class="fixed lg:static inset-y-0 right-0 z-50 w-72 lg:w-auto bg-white lg:bg-transparent lg:col-span-3 transform translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out p-4 lg:p-0 shadow-2xl lg:shadow-none overflow-y-auto no-print">
+                
+                <div class="flex items-center justify-between lg:hidden mb-4 pb-3 border-b">
+                    <span class="font-bold text-slate-800">المحطات</span>
+                    <button onclick="toggleMobileMenu()" class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="card p-4 mb-4">
+                    <div class="flex items-center justify-between mb-3">
+                        <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                            <i class="fa-solid fa-sitemap text-sky-600"></i>
+                            قائمة المحطات
+                        </h2>
+                        <button onclick="openAddStationModal()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus"></i> محطة
+                        </button>
+                    </div>
+                    <div id="stationNavList" class="space-y-2"></div>
+                </div>
+
+                <!-- النسخ الاحتياطي JSON -->
+                <div class="bg-slate-900 rounded-2xl p-4 text-white space-y-2 mb-3">
+                    <h3 class="text-xs font-bold text-amber-400 mb-2 flex items-center gap-1.5">
+                        <i class="fa-solid fa-database"></i> النسخ الاحتياطي (JSON)
+                    </h3>
+                    <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">احفظ هيكل المحطات وجميع القراءات في ملف JSON، أو استورد نسخة سابقة.</p>
+                    <button onclick="exportAllDataJSON()" class="w-full text-right text-sm bg-sky-600/80 hover:bg-sky-500 p-3 rounded-xl transition flex items-center justify-between border border-sky-500/30">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-file-export text-sky-200"></i> تصدير البيانات (JSON)</span>
+                        <i class="fa-solid fa-download text-slate-300 text-xs"></i>
+                    </button>
+                    <label class="w-full text-right text-sm bg-emerald-600/80 hover:bg-emerald-500 p-3 rounded-xl transition flex items-center justify-between border border-emerald-500/30 cursor-pointer">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-file-import text-emerald-200"></i> استيراد البيانات (JSON)</span>
+                        <i class="fa-solid fa-upload text-slate-300 text-xs"></i>
+                        <input type="file" id="jsonInputSidebar" onchange="importDataJSON(event)" class="hidden" accept=".json,application/json">
+                    </label>
+                </div>
+
+                <!-- التصدير والطباعة -->
+                <div class="bg-slate-800/80 rounded-2xl p-4 text-white space-y-2">
+                    <h3 class="text-xs font-bold text-slate-300 mb-2">التصدير والطباعة</h3>
+                    <button onclick="exportAllStationsExcel()" class="w-full text-right text-sm bg-white/10 hover:bg-white/20 p-3 rounded-xl transition flex items-center justify-between">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-file-excel text-emerald-400"></i> تصدير Excel منسّق</span>
+                        <i class="fa-solid fa-chevron-left text-slate-500 text-xs"></i>
+                    </button>
+                    <button onclick="window.print()" class="w-full text-right text-sm bg-white/10 hover:bg-white/20 p-3 rounded-xl transition flex items-center justify-between">
+                        <span class="flex items-center gap-2"><i class="fa-solid fa-print text-sky-300"></i> طباعة التقرير</span>
+                        <i class="fa-solid fa-chevron-left text-slate-500 text-xs"></i>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content -->
+            <main class="lg:col-span-9 space-y-5">
+                
+                <!-- Overview Tab -->
+                <div id="overviewTab" class="tab-content hidden space-y-5">
+                    <div class="card p-5">
+                        <h2 class="text-lg font-extrabold text-slate-800 flex items-center gap-2 mb-1">
+                            <i class="fa-solid fa-chart-pie text-amber-500"></i>
+                            الملخص الشامل
+                        </h2>
+                        <p class="text-sm text-slate-500">نظرة عامة على أداء جميع المحطات الرئيسية والفرعية</p>
+                    </div>
+
+                    <div class="card p-5">
+                        <h3 class="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-sky-600"></i>
+                            الإنتاج الفعلي مقابل المستهدف
+                        </h3>
+                        <div class="h-64 sm:h-72">
+                            <canvas id="overviewChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card overflow-hidden">
+                        <div class="p-4 border-b bg-slate-50 font-bold text-slate-700 text-sm">
+                            أداء المحطات
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-right min-w-[600px]">
+                                <thead class="bg-slate-50 text-slate-600 text-xs font-bold border-b">
+                                    <tr>
+                                        <th class="p-3 sticky-col">المحطة</th>
+                                        <th class="p-3">فرعيات</th>
+                                        <th class="p-3">القدرة</th>
+                                        <th class="p-3">الفعلي</th>
+                                        <th class="p-3">الهدف</th>
+                                        <th class="p-3">الانحراف</th>
+                                        <th class="p-3">الإنجاز</th>
+                                        <th class="p-3 no-print">عرض</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="overviewTableBody" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Station Tab -->
+                <div id="stationTab" class="tab-content hidden space-y-5">
+                    
+                    <!-- Station Header -->
+                    <div class="card p-5">
+                        <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                            <div class="flex items-start gap-4">
+                                <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl flex-shrink-0">
+                                    <i class="fa-solid fa-solar-panel"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap mb-1">
+                                        <h2 id="currentStationTitle" class="text-xl font-extrabold text-slate-800">اسم المحطة</h2>
+                                        <span id="currentStationTypeBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800">محطة رئيسية</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
+                                        <span class="flex items-center gap-1.5">
+                                            <i class="fa-solid fa-location-dot text-rose-500"></i>
+                                            <span id="currentStationAddressVal">غير محدد</span>
+                                        </span>
+                                        <span class="text-slate-300">|</span>
+                                        <span class="font-semibold text-amber-700">
+                                            <span id="currentStationCapacityVal">0</span> kWp
+                                        </span>
+                                        <span class="text-slate-300">|</span>
+                                        <span>
+                                            الهدف: <strong id="currentAnnualTargetVal" class="text-slate-800">0</strong> 
+                                            <span class="unitLabel">MWh</span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2 no-print">
+                                <button id="addSubStationBtn" onclick="openAddSubStationModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition flex items-center gap-2">
+                                    <i class="fa-solid fa-plus"></i> محطة فرعية
+                                </button>
+                                <button onclick="openEditStationModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-4 py-2.5 rounded-xl text-sm transition flex items-center gap-2 border">
+                                    <i class="fa-solid fa-pen"></i> تعديل
+                                </button>
+                                <button onclick="deleteCurrentStationOrSub()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold px-4 py-2.5 rounded-xl text-sm transition flex items-center gap-2 border border-rose-200">
+                                    <i class="fa-solid fa-trash"></i> حذف
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="subStationsSummaryCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-5 pt-5 border-t"></div>
+                    </div>
+
+                    <!-- Chart -->
+                    <div class="card p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-amber-500"></i>
+                                الإنتاج الشهري
+                            </h3>
+                            <span class="text-xs text-slate-400">عام 2026</span>
+                        </div>
+                        <div class="h-56 sm:h-64">
+                            <canvas id="stationMonthlyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Table -->
+                    <div class="card overflow-hidden">
+                        <div class="p-4 border-b bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                    <i class="fa-solid fa-table text-sky-600"></i>
+                                    جدول القراءات · <span id="tableNameLabel">المحطة</span>
+                                </h3>
+                                <p id="tableSubInfoText" class="text-xs text-slate-500 mt-0.5">أدخل القراءات مباشرة في الحقول أدناه</p>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-right border-collapse min-w-[640px]">
+                                <thead class="bg-slate-100 text-slate-700 text-xs font-bold border-b">
+                                    <tr id="monthlyTableHeaderRow"></tr>
+                                </thead>
+                                <tbody id="monthlyTableBody" class="divide-y divide-slate-200"></tbody>
+                                <tfoot id="monthlyTableFoot" class="bg-slate-900 text-white font-bold"></tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="card p-4">
+                        <label class="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <i class="fa-solid fa-comment-dots text-amber-500"></i>
+                            ملاحظات سنوية
+                        </label>
+                        <textarea id="stationAnnualNotes" oninput="saveStationNotes(this.value)" rows="2" 
+                            placeholder="أضف أي ملاحظات أو توصيات صيانة..."
+                            class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 focus:outline-none bg-slate-50"></textarea>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- ========== MODALS ========== -->
+
+    <!-- Add Main Station -->
+    <div id="addStationModal" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-sky-600"></i> إضافة محطة رئيسية
+                </h3>
+                <button onclick="closeAddStationModal()" class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 text-xl">&times;</button>
+            </div>
+            <form onsubmit="handleAddStationSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">اسم المحطة</label>
+                    <input type="text" id="newStationName" required placeholder="مثال: مجمع القاهرة الشمسي" 
+                        class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">الموقع / العنوان</label>
+                    <input type="text" id="newStationAddress" required placeholder="مثال: القاهرة الجديدة" 
+                        class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div class="flex justify-end gap-3 pt-3">
+                    <button type="button" onclick="closeAddStationModal()" class="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold">إلغاء</button>
+                    <button type="submit" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-sm font-semibold">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Sub Station -->
+    <div id="addSubStationModal" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle text-emerald-600"></i> إضافة محطة فرعية
+                </h3>
+                <button onclick="closeAddSubStationModal()" class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 text-xl">&times;</button>
+            </div>
+            <form onsubmit="handleAddSubStationSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">اسم المحطة الفرعية</label>
+                    <input type="text" id="newSubStationName" required placeholder="مثال: قطاع A - المبنى الإداري" 
+                        class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">القدرة (kWp)</label>
+                        <input type="number" id="newSubStationCapacity" step="any" min="0" value="250" required 
+                            class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">عدد الإنفرترات</label>
+                        <input type="number" id="newSubStationInverters" min="1" max="15" value="3" required 
+                            class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">الهدف السنوي (<span class="unitLabel">MWh</span>)</label>
+                    <input type="number" id="newSubStationAnnualTarget" step="any" min="0" value="600" required 
+                        class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+                <div class="flex justify-end gap-3 pt-3">
+                    <button type="button" onclick="closeAddSubStationModal()" class="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold">إلغاء</button>
+                    <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold">إضافة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Station -->
+    <div id="editStationModal" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-5">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-amber-500"></i> تعديل البيانات
+                </h3>
+                <button onclick="closeEditStationModal()" class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 text-xl">&times;</button>
+            </div>
+            <form onsubmit="handleEditStationSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">الاسم</label>
+                    <input type="text" id="editStationName" required class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+
+                <div id="editSubOnlyFields" class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">القدرة (kWp)</label>
+                        <input type="number" id="editStationCapacity" step="any" min="0" class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">الهدف السنوي</label>
+                        <input type="number" id="editStationAnnualTarget" step="any" min="0" class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">العنوان / الموقع</label>
+                    <input type="text" id="editStationAddress" class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                </div>
+
+                <div id="editInvertersSection" class="pt-3 border-t space-y-3">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1.5">عدد الإنفرترات</label>
+                        <input type="number" id="editInverterCount" min="1" max="30" value="1"
+                            onchange="syncInvertersFromCount(this.value)"
+                            class="w-full text-sm p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none">
+                        <p class="text-[11px] text-slate-400 mt-1">عند تغيير العدد تُضاف أو تُحذف أعمدة الإنفرترات تلقائياً (INV-1, INV-2, ...)</p>
+                    </div>
+                    <button type="button" onclick="openFieldsManagerModal()"
+                        class="w-full flex items-center justify-between gap-3 p-4 rounded-xl border-2 border-dashed border-sky-300 bg-sky-50 hover:bg-sky-100 hover:border-sky-400 transition group">
+                        <span class="flex items-center gap-3">
+                            <span class="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow group-hover:scale-105 transition">
+                                <i class="fa-solid fa-table-columns"></i>
+                            </span>
+                            <span class="text-right">
+                                <span class="block text-sm font-bold text-slate-800">الحقول</span>
+                                <span class="block text-xs text-slate-500 mt-0.5">إظهار / إخفاء أعمدة الجدول</span>
+                            </span>
+                        </span>
+                        <span class="flex items-center gap-2">
+                            <span id="fieldsCountBadge" class="text-xs font-bold bg-sky-600 text-white px-2.5 py-1 rounded-full">5</span>
+                            <i class="fa-solid fa-chevron-left text-slate-400 text-sm"></i>
+                        </span>
+                    </button>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="closeEditStationModal()" class="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl text-sm font-semibold">إلغاء</button>
+                    <button type="submit" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-sm font-semibold">حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- إدارة أعمدة الجدول: الفعلي / الهدف / الانحراف / الإنجاز / ملاحظات -->
+    <div id="fieldsManagerModal" class="fixed inset-0 bg-slate-900/60 z-[60] flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-table-columns text-sky-600"></i> إدارة الحقول
+                </h3>
+                <button type="button" onclick="closeFieldsManagerModal()" class="w-9 h-9 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 text-xl">&times;</button>
+            </div>
+            <p class="text-xs text-slate-500 mb-4 leading-relaxed">
+                اختر الأعمدة التي تظهر في جدول القراءات. الإنفرترات تُدار من حقل «عدد الإنفرترات».
+            </p>
+            <div id="fieldsManagerList" class="flex flex-wrap gap-2 mb-5"></div>
+            <div class="flex justify-end pt-3 border-t">
+                <button type="button" onclick="closeFieldsManagerModal()"
+                    class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold">
+                    تم
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+        // بيانات مستخرجة من تقرير إنتاجية Fresh
+        const INITIAL_DATA = [
+            {
+                id: 'st_washing',
+                name: 'غسالة - 500 kWp',
+                address: 'غسالة - 500 kWp',
+                annualNotes: '',
+                subStations: [
+                    {
+                        id: 'st_washing_leaf',
+                        name: 'غسالة - 500 kWp',
+                        capacity: 500,
+                        inverters: ['INV-1'],
+                        annualTarget: 705.473,
+                        annualNotes: '',
+                        monthlyData: [
+                            { month: 'يناير', values: [0], target: 37.073, note: '' },
+                            { month: 'فبراير', values: [0], target: 38.387, note: '' },
+                            { month: 'مارس', values: [0], target: 60.476, note: '' },
+                            { month: 'أبريل', values: [0], target: 69.247, note: '' },
+                            { month: 'مايو', values: [0], target: 78.674, note: '' },
+                            { month: 'يونيو', values: [0], target: 81.35, note: '' },
+                            { month: 'يوليو', values: [0], target: 79.968, note: '' },
+                            { month: 'أغسطس', values: [0], target: 73.863, note: '' },
+                            { month: 'سبتمبر', values: [0], target: 62.632, note: '' },
+                            { month: 'أكتوبر', values: [0], target: 51.881, note: '' },
+                            { month: 'نوفمبر', values: [0], target: 37.75, note: '' },
+                            { month: 'ديسمبر', values: [0], target: 34.173, note: '' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'st_heaters',
+                name: 'سخانات - 500 kWp',
+                address: 'سخانات - 500 kWp',
+                annualNotes: '',
+                subStations: [
+                    {
+                        id: 'st_heaters_leaf',
+                        name: 'سخانات - 500 kWp',
+                        capacity: 500,
+                        inverters: ['INV-1'],
+                        annualTarget: 707.027,
+                        annualNotes: '',
+                        monthlyData: [
+                            { month: 'يناير', values: [0], target: 38.238, note: '' },
+                            { month: 'فبراير', values: [0], target: 42.014, note: '' },
+                            { month: 'مارس', values: [0], target: 60.371, note: '' },
+                            { month: 'أبريل', values: [0], target: 66.758, note: '' },
+                            { month: 'مايو', values: [0], target: 79.379, note: '' },
+                            { month: 'يونيو', values: [0], target: 82.154, note: '' },
+                            { month: 'يوليو', values: [0], target: 80.36, note: '' },
+                            { month: 'أغسطس', values: [0], target: 71.02, note: '' },
+                            { month: 'سبتمبر', values: [0], target: 62.319, note: '' },
+                            { month: 'أكتوبر', values: [0], target: 49.441, note: '' },
+                            { month: 'نوفمبر', values: [0], target: 39.692, note: '' },
+                            { month: 'ديسمبر', values: [0], target: 35.282, note: '' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'st_ac',
+                name: 'تكييف - 500 kWp',
+                address: 'تكييف - 500 kWp',
+                annualNotes: '',
+                subStations: [
+                    {
+                        id: 'st_ac_leaf',
+                        name: 'تكييف - 500 kWp',
+                        capacity: 500,
+                        inverters: ['INV-1'],
+                        annualTarget: 717.84,
+                        annualNotes: '',
+                        monthlyData: [
+                            { month: 'يناير', values: [0], target: 36.39, note: '' },
+                            { month: 'فبراير', values: [0], target: 39.1, note: '' },
+                            { month: 'مارس', values: [0], target: 61.52, note: '' },
+                            { month: 'أبريل', values: [0], target: 70.82, note: '' },
+                            { month: 'مايو', values: [0], target: 80.69, note: '' },
+                            { month: 'يونيو', values: [0], target: 83.85, note: '' },
+                            { month: 'يوليو', values: [0], target: 82.48, note: '' },
+                            { month: 'أغسطس', values: [0], target: 75.76, note: '' },
+                            { month: 'سبتمبر', values: [0], target: 63.57, note: '' },
+                            { month: 'أكتوبر', values: [0], target: 52.68, note: '' },
+                            { month: 'نوفمبر', values: [0], target: 37.57, note: '' },
+                            { month: 'ديسمبر', values: [0], target: 33.41, note: '' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'st_silital',
+                name: 'سيليتال - 500 kWp',
+                address: 'سيليتال - 500 kWp',
+                annualNotes: '',
+                subStations: [
+                    {
+                        id: 'st_silital_leaf',
+                        name: 'سيليتال - 500 kWp',
+                        capacity: 500,
+                        inverters: ['INV-1'],
+                        annualTarget: 651.057,
+                        annualNotes: '',
+                        monthlyData: [
+                            { month: 'يناير', values: [0], target: 34.738, note: '' },
+                            { month: 'فبراير', values: [0], target: 38.55, note: '' },
+                            { month: 'مارس', values: [0], target: 56.078, note: '' },
+                            { month: 'أبريل', values: [0], target: 65.007, note: '' },
+                            { month: 'مايو', values: [0], target: 74.572, note: '' },
+                            { month: 'يونيو', values: [0], target: 77.818, note: '' },
+                            { month: 'يوليو', values: [0], target: 69.798, note: '' },
+                            { month: 'أغسطس', values: [0], target: 69.914, note: '' },
+                            { month: 'سبتمبر', values: [0], target: 51.893, note: '' },
+                            { month: 'أكتوبر', values: [0], target: 47.44, note: '' },
+                            { month: 'نوفمبر', values: [0], target: 33.202, note: '' },
+                            { month: 'ديسمبر', values: [0], target: 32.047, note: '' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'st_glass',
+                name: 'زجاج - 1000 kWp',
+                address: 'زجاج - 1000 kWp',
+                annualNotes: '',
+                subStations: [
+                    {
+                        id: 'st_glass_leaf',
+                        name: 'زجاج - 1000 kWp',
+                        capacity: 1000,
+                        inverters: ['INV-1'],
+                        annualTarget: 1456.2,
+                        annualNotes: '',
+                        monthlyData: [
+                            { month: 'يناير', values: [0], target: 78.5, note: '' },
+                            { month: 'فبراير', values: [0], target: 83.4, note: '' },
+                            { month: 'مارس', values: [0], target: 125.1, note: '' },
+                            { month: 'أبريل', values: [0], target: 142.1, note: '' },
+                            { month: 'مايو', values: [0], target: 160.9, note: '' },
+                            { month: 'يونيو', values: [0], target: 166.0, note: '' },
+                            { month: 'يوليو', values: [0], target: 163.2, note: '' },
+                            { month: 'أغسطس', values: [0], target: 151.5, note: '' },
+                            { month: 'سبتمبر', values: [0], target: 129.0, note: '' },
+                            { month: 'أكتوبر', values: [0], target: 107.9, note: '' },
+                            { month: 'نوفمبر', values: [0], target: 79.0, note: '' },
+                            { month: 'ديسمبر', values: [0], target: 69.6, note: '' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'st_fan',
+                name: 'مراوح - 250 kWp',
+                address: 'مراوح - 250 kWp',
+                annualNotes: '',
+                subStations: [
+                    {
+                        id: 'st_fan_leaf',
+                        name: 'مراوح - 250 kWp',
+                        capacity: 250,
+                        inverters: ['INV-1'],
+                        annualTarget: 400.26,
+                        annualNotes: '',
+                        monthlyData: [
+                            { month: 'يناير', values: [0], target: 25.59, note: '' },
+                            { month: 'فبراير', values: [0], target: 25.83, note: '' },
+                            { month: 'مارس', values: [0], target: 35.2, note: '' },
+                            { month: 'أبريل', values: [0], target: 36.12, note: '' },
+                            { month: 'مايو', values: [0], target: 42.38, note: '' },
+                            { month: 'يونيو', values: [0], target: 42.2, note: '' },
+                            { month: 'يوليو', values: [0], target: 43.06, note: '' },
+                            { month: 'أغسطس', values: [0], target: 40.76, note: '' },
+                            { month: 'سبتمبر', values: [0], target: 33.03, note: '' },
+                            { month: 'أكتوبر', values: [0], target: 28.05, note: '' },
+                            { month: 'نوفمبر', values: [0], target: 25.93, note: '' },
+                            { month: 'ديسمبر', values: [0], target: 22.11, note: '' }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'st_cooling',
+                name: 'مجمع التبريد',
+                address: 'مجمع التبريد',
+                annualNotes: 'ثلاجة 1 + ثلاجة 2 + بلاستيك + ديب فريزر',
+                subStations: [
+                    {
+                        id: 'sub_ref1',
+                        name: 'ثلاجة 1 - 499.22 kWp',
+                        capacity: 499.22,
+                        inverters: ['INV-1'],
+                        annualTarget: 700.798,
+                        annualNotes: '',
+                        monthlyData: [
+                            { month: 'يناير', values: [0], target: 36.613, note: '' },
+                            { month: 'فبراير', values: [0], target: 38.289, note: '' },
+                            { month: 'مارس', values: [0], target: 59.947, note: '' },
+                            { month: 'أبريل', values: [0], target: 69.09, note: '' },
+                            { month: 'مايو', values: [0], target: 78.616, note: '' },
+                            { month: 'يونيو', values: [0], target: 79.89, note: '' },
+                            { month: 'يوليو', values: [0], target: 80.438, note: '' },
+                            { month: 'أغسطس', values: [0], target: 73.853, note: '' },
+                            { month: 'سبتمبر', values: [0], target: 62.22, note: '' },
+                            { month: 'أكتوبر', values: [0], target: 51.43, note: '' },
+                            { month: 'نوفمبر', values: [0], target: 36.799, note: '' },
+                            { month: 'ديسمبر', values: [0], target: 33.614, note: '' }
+                        ]
+                    },
+                    {
+                        id: 'sub_ref2',
+                        name: 'ثلاجة 2 - 1185 kWp',
+                        capacity: 1185,
+                        inverters: ['INV-1'],
+                        annualTarget: 1628.048,
+                        annualNotes: '',
+                        monthlyData: [
+                            { month: 'يناير', values: [0], target: 89.016, note: '' },
+                            { month: 'فبراير', values: [0], target: 90.44, note: '' },
+                            { month: 'مارس', values: [0], target: 139.52, note: '' },
+                            { month: 'أبريل', values: [0], target: 149.26, note: '' },
+                            { month: 'مايو', values: [0], target: 183.083, note: '' },
+                            { month: 'يونيو', values: [0], target: 189.846, note: '' },
+                            { month: 'يوليو', values: [0], target: 186.188, note: '' },
+                            { month: 'أغسطس', values: [0], target: 171.633, note: '' },
+                            { month: 'سبتمبر', values: [0], target: 144.56, note: '' },
+                            { month: 'أكتوبر', values: [0], target: 118.62, note: '' },
+                            { month: 'نوفمبر', values: [0], target: 83.592, note: '' },
+                            { month: 'ديسمبر', values: [0], target: 82.29, note: '' }
+                        ]
+                    },
+                    {
+                        id: 'sub_plastic',
+                        name: 'بلاستيك - 839.3 kWp',
+                        capacity: 839.3,
+                        inverters: ['INV-1'],
+                        annualTarget: 1176.4,
+                        annualNotes: '',
+                        monthlyData: [
+                            { month: 'يناير', values: [0], target: 59.0, note: '' },
+                            { month: 'فبراير', values: [0], target: 70.8, note: '' },
+                            { month: 'مارس', values: [0], target: 95.7, note: '' },
+                            { month: 'أبريل', values: [0], target: 117.0, note: '' },
+                            { month: 'مايو', values: [0], target: 128.9, note: '' },
+                            { month: 'يونيو', values: [0], target: 134.2, note: '' },
+                            { month: 'يوليو', values: [0], target: 136.6, note: '' },
+                            { month: 'أغسطس', values: [0], target: 115.0, note: '' },
+                            { month: 'سبتمبر', values: [0], target: 105.6, note: '' },
+                            { month: 'أكتوبر', values: [0], target: 86.3, note: '' },
+                            { month: 'نوفمبر', values: [0], target: 67.3, note: '' },
+                            { month: 'ديسمبر', values: [0], target: 60.0, note: '' }
+                        ]
+                    },
+                    {
+                        id: 'sub_freezer',
+                        name: 'ديب فريزر - 521.5 kWp',
+                        capacity: 521.5,
+                        inverters: ['INV-1'],
+                        annualTarget: 718.19,
+                        annualNotes: '',
+                        monthlyData: [
+                            { month: 'يناير', values: [0], target: 39.08, note: '' },
+                            { month: 'فبراير', values: [0], target: 34.58, note: '' },
+                            { month: 'مارس', values: [0], target: 62.1, note: '' },
+                            { month: 'أبريل', values: [0], target: 72.07, note: '' },
+                            { month: 'مايو', values: [0], target: 82.63, note: '' },
+                            { month: 'يونيو', values: [0], target: 86.03, note: '' },
+                            { month: 'يوليو', values: [0], target: 71.07, note: '' },
+                            { month: 'أغسطس', values: [0], target: 77.1, note: '' },
+                            { month: 'سبتمبر', values: [0], target: 64.76, note: '' },
+                            { month: 'أكتوبر', values: [0], target: 52.6, note: '' },
+                            { month: 'نوفمبر', values: [0], target: 40.41, note: '' },
+                            { month: 'ديسمبر', values: [0], target: 35.76, note: '' }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        let appState = {
+            stations: [],
+            activeTab: 'overview',
+            unit: 'MWh',
+            unitMultiplier: 1
+        };
+
+        let overviewChartInstance = null;
+        let stationMonthlyChartInstance = null;
+
+        window.onload = function() {
+            loadStateFromLocalStorage();
+            renderSidebar();
+            renderGlobalStats();
+            switchTab(appState.activeTab || 'overview');
+        };
+
+        function toggleMobileMenu() {
+            const drawer = document.getElementById('sidebarDrawer');
+            const overlay = document.getElementById('drawerOverlay');
+            drawer.classList.toggle('translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        function loadStateFromLocalStorage() {
+            const saved = localStorage.getItem('solar_app_fresh_flat_2026');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    appState.stations = parsed.stations || INITIAL_DATA;
+                    appState.unit = parsed.unit || 'MWh';
+                    appState.unitMultiplier = appState.unit === 'kWh' ? 1000 : 1;
+                    document.getElementById('unitSelector').value = appState.unit;
+                } catch(e) {
+                    appState.stations = JSON.parse(JSON.stringify(INITIAL_DATA));
+                }
+            } else {
+                appState.stations = JSON.parse(JSON.stringify(INITIAL_DATA));
+                saveStateToLocalStorage();
+            }
+            updateUnitLabels();
+        }
+
+        function saveStateToLocalStorage() {
+            localStorage.setItem('solar_app_fresh_flat_2026', JSON.stringify({
+                stations: appState.stations,
+                unit: appState.unit
+            }));
+        }
+
+        function changeUnit(newUnit) {
+            appState.unit = newUnit;
+            appState.unitMultiplier = newUnit === 'kWh' ? 1000 : 1;
+            saveStateToLocalStorage();
+            updateUnitLabels();
+            renderGlobalStats();
+            switchTab(appState.activeTab);
+        }
+
+        function updateUnitLabels() {
+            document.querySelectorAll('.unitLabel').forEach(el => el.textContent = appState.unit);
+        }
+
+        let _toastTimer = null;
+        function showSaveToast() {
+            const el = document.getElementById('saveToast');
+            if (!el) return;
+            el.classList.add('show');
+            clearTimeout(_toastTimer);
+            _toastTimer = setTimeout(() => el.classList.remove('show'), 1400);
+        }
+
+        function formatNum(val, decimals = 1) {
+            if (val === undefined || val === null || isNaN(val)) return '0';
+            const converted = val * appState.unitMultiplier;
+            return converted.toLocaleString('ar-EG', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+        }
+
+        function findTarget(tabId) {
+            if (tabId === 'overview') return { type: 'overview' };
+            for (let main of appState.stations) {
+                if (main.id === tabId) return { type: 'main', mainStation: main };
+                if (main.subStations) {
+                    for (let sub of main.subStations) {
+                        if (sub.id === tabId) {
+                            if (sub.isGroup) return { type: 'group', mainStation: main, group: sub };
+                            return { type: 'sub', mainStation: main, subStation: sub, group: null };
+                        }
+                        if (sub.isGroup && sub.subStations) {
+                            const nested = sub.subStations.find(s => s.id === tabId);
+                            if (nested) return { type: 'sub', mainStation: main, subStation: nested, group: sub };
+                        }
+                    }
+                }
+            }
+            return { type: 'overview' };
+        }
+
+        function calculateSubTotals(sub) {
+            if (sub && sub.isGroup && sub.subStations) {
+                let actualSum = 0, targetSum = 0, capacity = 0;
+                sub.subStations.forEach(child => {
+                    const st = calculateSubTotals(child);
+                    actualSum += st.actual;
+                    targetSum += st.target;
+                    capacity += st.capacity;
+                });
+                return { actual: actualSum, target: targetSum, capacity: capacity || sub.capacity || 0 };
+            }
+            let actualSum = 0;
+            let targetSum = sub.annualTarget || 0;
+            if (sub.monthlyData) {
+                sub.monthlyData.forEach(m => {
+                    actualSum += m.values.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+                });
+            }
+            return { actual: actualSum, target: targetSum, capacity: sub.capacity || 0 };
+        }
+
+        function calculateMainTotals(main) {
+            let totalActual = 0, totalTarget = 0, totalCapacity = 0;
+            if (main.subStations) {
+                main.subStations.forEach(sub => {
+                    const st = calculateSubTotals(sub);
+                    totalActual += st.actual;
+                    totalTarget += st.target;
+                    totalCapacity += st.capacity;
+                });
+            }
+            return { actual: totalActual, target: totalTarget, capacity: totalCapacity };
+        }
+
+        function getLeafStations(container) {
+            const leaves = [];
+            if (!container || !container.subStations) return leaves;
+            container.subStations.forEach(s => {
+                if (s.isGroup) leaves.push(...getLeafStations(s));
+                else leaves.push(s);
+            });
+            return leaves;
+        }
+
+        function renderSidebar() {
+            const container = document.getElementById('stationNavList');
+            let html = `
+                <button onclick="switchTab('overview')" class="w-full text-right px-3 py-2.5 rounded-xl text-sm font-bold transition flex items-center justify-between ${appState.activeTab === 'overview' ? 'bg-sky-600 text-white shadow' : 'text-slate-700 hover:bg-slate-100'}">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-chart-pie"></i> الملخص الشامل</span>
+                    <i class="fa-solid fa-chevron-left text-xs opacity-70"></i>
+                </button>
+                <div class="my-2 border-t border-slate-100"></div>
+            `;
+
+            appState.stations.forEach(main => {
+                const isMainActive = appState.activeTab === main.id;
+                const mainTotals = calculateMainTotals(main);
+
+                html += `
+                    <div class="bg-slate-50 rounded-xl p-2 border border-slate-100">
+                        <button onclick="switchTab('${main.id}')" class="w-full text-right px-2.5 py-2 rounded-lg text-sm font-bold transition flex items-center justify-between ${isMainActive ? 'bg-slate-800 text-white' : 'text-slate-800 hover:bg-slate-200/70'}">
+                            <span class="flex items-center gap-2 truncate">
+                                <i class="fa-solid fa-building ${isMainActive ? 'text-amber-400' : 'text-sky-600'}"></i>
+                                ${main.name}
+                            </span>
+                            <span class="text-[10px] bg-white/20 px-1.5 py-0.5 rounded font-bold">${mainTotals.capacity}</span>
+                        </button>
+                        <div class="pr-2 mt-1 space-y-1">
+                `;
+
+                const leavesOnly = getLeafStations(main);
+                const isSinglePlant = leavesOnly.length === 1 && !(main.subStations || []).some(s => s.isGroup);
+
+                if (isSinglePlant) {
+                    html += ``;
+                } else if (main.subStations && main.subStations.length > 0) {
+                    main.subStations.forEach(sub => {
+                        if (sub.isGroup) {
+                            const isGroupActive = appState.activeTab === sub.id;
+                            const gTotals = calculateSubTotals(sub);
+                            html += `
+                                <button onclick="switchTab('${sub.id}')" class="w-full text-right px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-between ${isGroupActive ? 'bg-indigo-600 text-white' : 'text-indigo-800 hover:bg-indigo-50'}">
+                                    <span class="flex items-center gap-1.5 truncate">
+                                        <i class="fa-solid fa-layer-group ${isGroupActive ? 'text-white' : 'text-indigo-500'}"></i>
+                                        ${sub.name}
+                                    </span>
+                                    <span class="text-[10px] opacity-80">${Math.round(gTotals.capacity)}</span>
+                                </button>
+                                <div class="pr-3 space-y-0.5 mt-0.5">
+                            `;
+                            (sub.subStations || []).forEach(child => {
+                                const isChildActive = appState.activeTab === child.id;
+                                html += `
+                                    <button onclick="switchTab('${child.id}')" class="w-full text-right px-2 py-1.5 rounded-lg text-[11px] font-semibold transition flex items-center justify-between ${isChildActive ? 'bg-amber-500 text-white' : 'text-slate-600 hover:bg-slate-200/60'}">
+                                        <span class="flex items-center gap-1.5 truncate">
+                                            <i class="fa-solid fa-solar-panel ${isChildActive ? 'text-white' : 'text-amber-500'}"></i>
+                                            ${child.name}
+                                        </span>
+                                        <span class="text-[9px] opacity-80">${child.capacity}</span>
+                                    </button>
+                                `;
+                            });
+                            html += `</div>`;
+                        } else {
+                            const isSubActive = appState.activeTab === sub.id;
+                            html += `
+                                <button onclick="switchTab('${sub.id}')" class="w-full text-right px-2.5 py-1.5 rounded-lg text-xs font-semibold transition flex items-center justify-between ${isSubActive ? 'bg-amber-500 text-white' : 'text-slate-600 hover:bg-slate-200/60'}">
+                                    <span class="flex items-center gap-1.5 truncate">
+                                        <i class="fa-solid fa-solar-panel ${isSubActive ? 'text-white' : 'text-amber-500'}"></i>
+                                        ${sub.name}
+                                    </span>
+                                    <span class="text-[10px] opacity-80">${sub.capacity}</span>
+                                </button>
+                            `;
+                        }
+                    });
+                } else {
+                    html += `<div class="text-xs text-slate-400 pr-2 py-1">لا توجد محطات فرعية</div>`;
+                }
+
+                html += `</div></div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function switchTab(tabId) {
+            appState.activeTab = tabId;
+            saveStateToLocalStorage();
+            renderSidebar();
+
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+
+            if (tabId === 'overview') {
+                document.getElementById('overviewTab').classList.remove('hidden');
+                renderOverviewTab();
+            } else {
+                document.getElementById('stationTab').classList.remove('hidden');
+                renderStationTab(tabId);
+            }
+            renderGlobalStats();
+
+            document.getElementById('sidebarDrawer').classList.add('translate-x-full');
+            document.getElementById('drawerOverlay').classList.add('hidden');
+        }
+
+        function renderGlobalStats() {
+            let totalActual = 0, totalTarget = 0, totalCapacity = 0, subCount = 0;
+
+            appState.stations.forEach(main => {
+                const mt = calculateMainTotals(main);
+                totalActual += mt.actual;
+                totalTarget += mt.target;
+                totalCapacity += mt.capacity;
+                subCount += getLeafStations(main).length;
+            });
+
+            const pct = totalTarget > 0 ? (totalActual / totalTarget * 100) : 0;
+
+            document.getElementById('globalCapacityVal').textContent = totalCapacity.toLocaleString('ar-EG', { maximumFractionDigits: 1 });
+            document.getElementById('globalActualVal').textContent = formatNum(totalActual, 1);
+            document.getElementById('globalTargetVal').textContent = formatNum(totalTarget, 1);
+            document.getElementById('globalAchievedPct').textContent = pct.toFixed(1) + '%';
+            document.getElementById('globalStationCount').textContent = subCount + ' فرعية';
+        }
+
+        function renderOverviewTab() {
+            const tbody = document.getElementById('overviewTableBody');
+            let html = '';
+            const labels = [], actuals = [], targets = [];
+
+            appState.stations.forEach(main => {
+                const mainTotals = calculateMainTotals(main);
+                const diff = mainTotals.actual - mainTotals.target;
+                const pct = mainTotals.target > 0 ? (mainTotals.actual / mainTotals.target * 100) : 0;
+                const isGood = diff >= 0;
+
+                labels.push(main.name);
+                actuals.push(mainTotals.actual * appState.unitMultiplier);
+                targets.push(mainTotals.target * appState.unitMultiplier);
+
+                html += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-bold text-slate-800 sticky-col">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-building text-sky-600"></i> ${main.name}
+                            </div>
+                        </td>
+                        <td class="p-3 text-slate-600">${getLeafStations(main).length}</td>
+                        <td class="p-3 font-bold text-amber-600">${Math.round(mainTotals.capacity * 10) / 10} kWp</td>
+                        <td class="p-3 font-extrabold text-sky-700">${formatNum(mainTotals.actual, 1)}</td>
+                        <td class="p-3 text-slate-600">${formatNum(mainTotals.target, 1)}</td>
+                        <td class="p-3 font-bold ${isGood ? 'text-emerald-600' : 'text-rose-600'}" dir="ltr">${diff >= 0 ? '+' : ''}${formatNum(diff, 1)}</td>
+                        <td class="p-3">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold ${isGood ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${pct.toFixed(1)}%</span>
+                        </td>
+                        <td class="p-3 no-print">
+                            <button onclick="switchTab('${main.id}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-semibold">التفاصيل</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+
+            const ctx = document.getElementById('overviewChart').getContext('2d');
+            if (overviewChartInstance) overviewChartInstance.destroy();
+            overviewChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: `الفعلي (${appState.unit})`, data: actuals, backgroundColor: '#0284c7', borderRadius: 6 },
+                        { label: `الهدف (${appState.unit})`, data: targets, backgroundColor: '#f59e0b', borderRadius: 6 }
+                    ]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { font: { family: 'Cairo' } } } }
+                }
+            });
+        }
+
+        function renderStationTab(tabId) {
+            const targetInfo = findTarget(tabId);
+            if (targetInfo.type === 'overview') return;
+
+            const isMain = targetInfo.type === 'main';
+            const isGroup = targetInfo.type === 'group';
+            const main = targetInfo.mainStation;
+            const sub = targetInfo.subStation;
+            const group = targetInfo.group;
+
+            let title, address, notes;
+            if (isMain) {
+                title = main.name;
+                address = main.address || main.name;
+                notes = main.annualNotes;
+            } else if (isGroup) {
+                title = group.name;
+                address = group.address || group.name;
+                notes = group.annualNotes;
+            } else {
+                title = sub.name;
+                address = sub.name;
+                notes = sub.annualNotes;
+            }
+
+            document.getElementById('currentStationTitle').textContent = title;
+            document.getElementById('currentStationAddressVal').textContent = address;
+            document.getElementById('tableNameLabel').textContent = title;
+            document.getElementById('stationAnnualNotes').value = notes || '';
+
+            const addSubBtn = document.getElementById('addSubStationBtn');
+            const typeBadge = document.getElementById('currentStationTypeBadge');
+
+            if (isMain) {
+                const leaves = getLeafStations(main);
+                const onlyOneLeaf = leaves.length === 1 && !(main.subStations || []).some(s => s.isGroup);
+
+                addSubBtn.classList.remove('hidden');
+                typeBadge.textContent = "محطة رئيسية";
+                typeBadge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800";
+
+                const mainTotals = calculateMainTotals(main);
+                document.getElementById('currentStationCapacityVal').textContent = Math.round(mainTotals.capacity * 10) / 10;
+                document.getElementById('currentAnnualTargetVal').textContent = formatNum(mainTotals.target, 1);
+
+                if (onlyOneLeaf) {
+                    document.getElementById('tableSubInfoText').textContent = 'أدخل القراءات مباشرة · يتم التجميع فوراً';
+                    document.getElementById('subStationsSummaryCards').innerHTML = '';
+                    renderEditableMonthlyTable(leaves[0]);
+                } else {
+                    document.getElementById('tableSubInfoText').textContent = 'قراءات مجمعة تلقائياً من المحطات الفرعية';
+                    renderSubStationsCards(main);
+                    renderAggregatedMonthlyTable(main);
+                }
+            } else if (isGroup) {
+                addSubBtn.classList.add('hidden');
+                typeBadge.textContent = `مجمع فرعي · ${main.name}`;
+                typeBadge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800";
+
+                const gTotals = calculateSubTotals(group);
+                document.getElementById('currentStationCapacityVal').textContent = Math.round(gTotals.capacity * 10) / 10;
+                document.getElementById('currentAnnualTargetVal').textContent = formatNum(gTotals.target, 1);
+                document.getElementById('tableSubInfoText').textContent = 'تجميع تلقائي لوحدات التبريد الأربع';
+
+                renderSubStationsCards(group);
+                renderAggregatedMonthlyTable(group);
+            } else {
+                addSubBtn.classList.add('hidden');
+                const parentLabel = group ? group.name : main.name;
+                typeBadge.textContent = `فرعية · ${parentLabel}`;
+                typeBadge.className = "text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800";
+
+                const subTotals = calculateSubTotals(sub);
+                document.getElementById('currentStationCapacityVal').textContent = subTotals.capacity;
+                document.getElementById('currentAnnualTargetVal').textContent = formatNum(subTotals.target, 1);
+                document.getElementById('tableSubInfoText').textContent = 'أدخل القراءات مباشرة · يتم التجميع فوراً';
+
+                document.getElementById('subStationsSummaryCards').innerHTML = '';
+                renderEditableMonthlyTable(sub);
+            }
+        }
+
+        function renderSubStationsCards(containerObj) {
+            const container = document.getElementById('subStationsSummaryCards');
+            let html = '';
+            if (containerObj.subStations && containerObj.subStations.length > 0) {
+                containerObj.subStations.forEach(sub => {
+                    const st = calculateSubTotals(sub);
+                    const isGrp = !!sub.isGroup;
+                    const icon = isGrp ? 'fa-layer-group text-indigo-500' : 'fa-solar-panel text-amber-500';
+                    const meta = isGrp
+                        ? `${Math.round(st.capacity)} kWp · ${(sub.subStations || []).length} وحدات`
+                        : `${sub.capacity} kWp · ${normalizeFieldsList(sub.inverters).length} حقل`;
+                    html += `
+                        <div onclick="switchTab('${sub.id}')" class="bg-slate-50 hover:bg-sky-50 border border-slate-200 rounded-xl p-4 cursor-pointer transition ${isGrp ? 'border-indigo-200 bg-indigo-50/40' : ''}">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-bold text-sm text-slate-800 flex items-center gap-1.5">
+                                        <i class="fa-solid ${icon}"></i> ${sub.name}
+                                    </h4>
+                                    <p class="text-xs text-slate-500 mt-1">${meta}</p>
+                                </div>
+                                <div class="text-left">
+                                    <div class="text-sm font-extrabold text-sky-700">${formatNum(st.actual, 1)} <span class="text-[10px] font-normal">${appState.unit}</span></div>
+                                    <div class="text-xs text-slate-400">هدف: ${formatNum(st.target, 1)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                html = `<div class="col-span-full text-sm text-slate-400 py-3 text-center">لا توجد محطات فرعية.</div>`;
+            }
+            container.innerHTML = html;
+        }
+
+        function getMonthActualTarget(node, mIdx) {
+            if (node.isGroup && node.subStations) {
+                let act = 0, tar = 0;
+                node.subStations.forEach(ch => {
+                    const r = getMonthActualTarget(ch, mIdx);
+                    act += r.actual;
+                    tar += r.target;
+                });
+                return { actual: act, target: tar };
+            }
+            const mData = node.monthlyData && node.monthlyData[mIdx];
+            if (!mData) return { actual: 0, target: 0 };
+            const actual = mData.values.reduce((a, b) => a + (parseFloat(b) || 0), 0);
+            return { actual, target: mData.target || 0 };
+        }
+
+        function renderAggregatedMonthlyTable(containerObj) {
+            const colVis = normalizeColumnVisibility(containerObj.columnVisibility);
+            const headerRow = document.getElementById('monthlyTableHeaderRow');
+            let headerHtml = `<th class="p-3 border-l border-slate-200 min-w-[80px] bg-slate-100 sticky-col">الشهر</th>`;
+            
+            if (containerObj.subStations) {
+                containerObj.subStations.forEach(sub => {
+                    const bg = sub.isGroup ? 'bg-indigo-50 text-indigo-900' : 'bg-sky-50 text-sky-900';
+                    headerHtml += `<th class="p-3 border-l border-slate-200 min-w-[110px] ${bg}">${sub.name}</th>`;
+                });
+            }
+            if (colVis.actual) headerHtml += `<th class="p-3 border-l border-slate-200 bg-amber-50 text-amber-900 min-w-[100px]">الفعلي</th>`;
+            if (colVis.target) headerHtml += `<th class="p-3 border-l border-slate-200 bg-slate-100 min-w-[100px]">الهدف</th>`;
+            if (colVis.deviation) headerHtml += `<th class="p-3 border-l border-slate-200 min-w-[90px]">الانحراف</th>`;
+            if (colVis.achievement) headerHtml += `<th class="p-3 border-l border-slate-200 min-w-[90px]">الإنجاز</th>`;
+            headerRow.innerHTML = headerHtml;
+
+            const tbody = document.getElementById('monthlyTableBody');
+            let tbodyHtml = '';
+            const monthlyActualSums = new Array(12).fill(0);
+            const monthlyTargets = new Array(12).fill(0);
+
+            MONTHS.forEach((mName, mIdx) => {
+                let monthAggSum = 0;
+                let monthTargetSum = 0;
+                let subCellsHtml = '';
+
+                if (containerObj.subStations) {
+                    containerObj.subStations.forEach(sub => {
+                        const r = getMonthActualTarget(sub, mIdx);
+                        monthAggSum += r.actual;
+                        monthTargetSum += r.target;
+                        const cellBg = sub.isGroup ? 'bg-indigo-50/50' : 'bg-slate-50/50';
+                        subCellsHtml += `<td class="p-2.5 border-l border-slate-200 text-center font-semibold text-slate-700 ${cellBg}">${formatNum(r.actual, 1)}</td>`;
+                    });
+                }
+
+                monthlyActualSums[mIdx] = monthAggSum;
+                monthlyTargets[mIdx] = monthTargetSum;
+
+                const diff = monthAggSum - monthTargetSum;
+                const pct = monthTargetSum > 0 ? (monthAggSum / monthTargetSum * 100) : 0;
+                const isGood = diff >= 0;
+
+                let extra = '';
+                if (colVis.actual) extra += `<td class="p-2.5 font-extrabold text-sky-800 border-l border-slate-200 bg-amber-50/40 text-center">${formatNum(monthAggSum, 1)}</td>`;
+                if (colVis.target) extra += `<td class="p-2.5 font-bold text-slate-700 border-l border-slate-200 text-center">${formatNum(monthTargetSum, 1)}</td>`;
+                if (colVis.deviation) extra += `<td class="p-2.5 font-bold border-l border-slate-200 text-center ${isGood ? 'text-emerald-600' : 'text-rose-600'}" dir="ltr">${diff >= 0 ? '+' : ''}${formatNum(diff, 1)}</td>`;
+                if (colVis.achievement) extra += `<td class="p-2.5 border-l border-slate-200 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${isGood ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${pct.toFixed(1)}%</span>
+                        </td>`;
+
+                tbodyHtml += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2.5 font-bold text-slate-700 border-l border-slate-200 sticky-col">${mName}</td>
+                        ${subCellsHtml}
+                        ${extra}
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = tbodyHtml;
+
+            const tfoot = document.getElementById('monthlyTableFoot');
+            const totAct = monthlyActualSums.reduce((a, b) => a + b, 0);
+            const totTar = monthlyTargets.reduce((a, b) => a + b, 0);
+            const totDiff = totAct - totTar;
+            const totPct = totTar > 0 ? (totAct / totTar * 100) : 0;
+
+            let footHtml = `<tr><td class="p-3 text-amber-400 font-extrabold border-l border-slate-700 sticky-col">الإجمالي</td>`;
+            if (containerObj.subStations) {
+                containerObj.subStations.forEach(sub => {
+                    const st = calculateSubTotals(sub);
+                    footHtml += `<td class="p-3 border-l border-slate-700 text-center text-sky-200 font-bold">${formatNum(st.actual, 1)}</td>`;
+                });
+            }
+            if (colVis.actual) footHtml += `<td class="p-3 border-l border-slate-700 text-center text-amber-300 font-extrabold">${formatNum(totAct, 1)}</td>`;
+            if (colVis.target) footHtml += `<td class="p-3 border-l border-slate-700 text-center text-slate-300 font-bold">${formatNum(totTar, 1)}</td>`;
+            if (colVis.deviation) footHtml += `<td class="p-3 border-l border-slate-700 text-center ${totDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}" dir="ltr">${totDiff >= 0 ? '+' : ''}${formatNum(totDiff, 1)}</td>`;
+            if (colVis.achievement) footHtml += `<td class="p-3 border-l border-slate-700 text-center text-emerald-400 font-extrabold">${totPct.toFixed(1)}%</td>`;
+            footHtml += `</tr>`;
+            tfoot.innerHTML = footHtml;
+
+            renderStationChart(monthlyActualSums, monthlyTargets);
+        }
+
+        // ✅ جدول القراءات: نفس حقول مجمع التبريد + إظهار الحقول الظاهرة فقط
+        function renderEditableMonthlyTable(sub) {
+            const invNames = fieldNamesOf(sub.inverters);
+            const colVis = normalizeColumnVisibility(sub.columnVisibility);
+
+            const headerRow = document.getElementById('monthlyTableHeaderRow');
+            let headerHtml = `<th class="p-3 border-l border-slate-200 min-w-[80px] bg-slate-100 sticky-col">الشهر</th>`;
+            invNames.forEach(invName => {
+                headerHtml += `<th class="p-3 border-l border-slate-200 min-w-[110px] bg-sky-50 text-sky-900">${invName}</th>`;
+            });
+            if (colVis.actual) headerHtml += `<th class="p-3 border-l border-slate-200 bg-amber-50 text-amber-900 min-w-[100px]">الفعلي</th>`;
+            if (colVis.target) headerHtml += `<th class="p-3 border-l border-slate-200 bg-slate-100 min-w-[100px]">الهدف</th>`;
+            if (colVis.deviation) headerHtml += `<th class="p-3 border-l border-slate-200 min-w-[90px]">الانحراف</th>`;
+            if (colVis.achievement) headerHtml += `<th class="p-3 border-l border-slate-200 min-w-[90px]">الإنجاز</th>`;
+            if (colVis.notes) headerHtml += `<th class="p-3 min-w-[140px]">ملاحظات</th>`;
+            headerRow.innerHTML = headerHtml;
+
+            const tbody = document.getElementById('monthlyTableBody');
+            let tbodyHtml = '';
+            const monthlyActualSums = [];
+            const monthlyTargets = [];
+            const inverterTotals = new Array(invNames.length).fill(0);
+
+            (sub.monthlyData || []).forEach((m, mIdx) => {
+                let monthSum = 0;
+                let invCellsHtml = '';
+
+                invNames.forEach((_, invIdx) => {
+                    const rawVal = m.values[invIdx] !== undefined ? m.values[invIdx] : 0;
+                    inverterTotals[invIdx] += parseFloat(rawVal) || 0;
+                    monthSum += parseFloat(rawVal) || 0;
+                    invCellsHtml += `
+                        <td class="p-1.5 border-l border-slate-200">
+                            <input type="number" step="any" min="0" value="${rawVal}" 
+                                onchange="updateInverterVal('${sub.id}', ${mIdx}, ${invIdx}, this.value)"
+                                class="w-full text-center p-2.5 bg-white border border-slate-200 focus:border-sky-500 focus:ring-2 focus:ring-sky-200 rounded-lg text-sm font-semibold text-slate-800 focus:outline-none transition">
+                        </td>
+                    `;
+                });
+
+                const targetVal = m.target || 0;
+                const diff = monthSum - targetVal;
+                const pct = targetVal > 0 ? (monthSum / targetVal * 100) : 0;
+                const isGood = diff >= 0;
+
+                monthlyActualSums.push(monthSum);
+                monthlyTargets.push(targetVal);
+
+                let extraCells = '';
+                if (colVis.actual) {
+                    extraCells += `<td class="p-2.5 font-extrabold text-sky-800 border-l border-slate-200 bg-amber-50/40 text-center">${formatNum(monthSum, 1)}</td>`;
+                }
+                if (colVis.target) {
+                    extraCells += `<td class="p-1.5 border-l border-slate-200">
+                            <input type="number" step="any" min="0" value="${targetVal}" 
+                                onchange="updateSubMonthlyTarget('${sub.id}', ${mIdx}, this.value)"
+                                class="w-full text-center p-2.5 bg-white border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-200 rounded-lg text-sm font-semibold text-slate-700 focus:outline-none transition">
+                        </td>`;
+                }
+                if (colVis.deviation) {
+                    extraCells += `<td class="p-2.5 font-bold border-l border-slate-200 text-center ${isGood ? 'text-emerald-600' : 'text-rose-600'}" dir="ltr">${diff >= 0 ? '+' : ''}${formatNum(diff, 1)}</td>`;
+                }
+                if (colVis.achievement) {
+                    extraCells += `<td class="p-2.5 border-l border-slate-200 text-center">
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${isGood ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${pct.toFixed(1)}%</span>
+                        </td>`;
+                }
+                if (colVis.notes) {
+                    extraCells += `<td class="p-1.5">
+                            <input type="text" value="${m.note || ''}" placeholder="ملاحظة..."
+                                onchange="updateSubMonthlyNote('${sub.id}', ${mIdx}, this.value)"
+                                class="w-full p-2.5 bg-white border border-slate-200 focus:border-slate-400 rounded-lg text-sm text-slate-600 focus:outline-none transition">
+                        </td>`;
+                }
+
+                tbodyHtml += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2.5 font-bold text-slate-700 border-l border-slate-200 sticky-col">${m.month}</td>
+                        ${invCellsHtml}
+                        ${extraCells}
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = tbodyHtml;
+
+            const tfoot = document.getElementById('monthlyTableFoot');
+            const totalActual = monthlyActualSums.reduce((a, b) => a + b, 0);
+            const totalTarget = monthlyTargets.reduce((a, b) => a + b, 0);
+            const totDiff = totalActual - totalTarget;
+            const totPct = totalTarget > 0 ? (totalActual / totalTarget * 100) : 0;
+
+            let footHtml = `<tr><td class="p-3 text-amber-400 font-extrabold border-l border-slate-700 sticky-col">الإجمالي</td>`;
+            inverterTotals.forEach(invTot => {
+                footHtml += `<td class="p-3 border-l border-slate-700 text-center text-sky-200">${formatNum(invTot, 1)}</td>`;
+            });
+            if (colVis.actual) footHtml += `<td class="p-3 border-l border-slate-700 text-center text-amber-300 font-extrabold">${formatNum(totalActual, 1)}</td>`;
+            if (colVis.target) footHtml += `<td class="p-3 border-l border-slate-700 text-center text-slate-300 font-bold">${formatNum(totalTarget, 1)}</td>`;
+            if (colVis.deviation) footHtml += `<td class="p-3 border-l border-slate-700 text-center ${totDiff >= 0 ? 'text-emerald-400' : 'text-rose-400'}" dir="ltr">${totDiff >= 0 ? '+' : ''}${formatNum(totDiff, 1)}</td>`;
+            if (colVis.achievement) footHtml += `<td class="p-3 border-l border-slate-700 text-center text-emerald-400 font-extrabold">${totPct.toFixed(1)}%</td>`;
+            if (colVis.notes) footHtml += `<td class="p-3 text-xs text-slate-400">2026</td>`;
+            footHtml += `</tr>`;
+            tfoot.innerHTML = footHtml;
+
+            renderStationChart(monthlyActualSums, monthlyTargets);
+        }
+
+        function updateInverterVal(subId, monthIdx, invIdx, value) {
+            const targetInfo = findTarget(subId);
+            if (targetInfo.type === 'sub') {
+                targetInfo.subStation.monthlyData[monthIdx].values[invIdx] = parseFloat(value) || 0;
+                saveStateToLocalStorage();
+                showSaveToast();
+                renderStationTab(appState.activeTab);
+                renderGlobalStats();
+            }
+        }
+
+        function updateSubMonthlyTarget(subId, monthIdx, value) {
+            const targetInfo = findTarget(subId);
+            if (targetInfo.type === 'sub') {
+                targetInfo.subStation.monthlyData[monthIdx].target = parseFloat(value) || 0;
+                targetInfo.subStation.annualTarget = targetInfo.subStation.monthlyData.reduce((acc, m) => acc + (m.target || 0), 0);
+                saveStateToLocalStorage();
+                showSaveToast();
+                renderStationTab(appState.activeTab);
+                renderGlobalStats();
+            }
+        }
+
+        function updateSubMonthlyNote(subId, monthIdx, value) {
+            const targetInfo = findTarget(subId);
+            if (targetInfo.type === 'sub') {
+                targetInfo.subStation.monthlyData[monthIdx].note = value;
+                saveStateToLocalStorage();
+                showSaveToast();
+            }
+        }
+
+        function saveStationNotes(val) {
+            const targetInfo = findTarget(appState.activeTab);
+            if (targetInfo.type === 'main') targetInfo.mainStation.annualNotes = val;
+            else if (targetInfo.type === 'group') targetInfo.group.annualNotes = val;
+            else if (targetInfo.type === 'sub') targetInfo.subStation.annualNotes = val;
+            saveStateToLocalStorage();
+        }
+
+        function renderStationChart(actuals, targets) {
+            const ctx = document.getElementById('stationMonthlyChart').getContext('2d');
+            if (stationMonthlyChartInstance) stationMonthlyChartInstance.destroy();
+
+            const datasets = [
+                { 
+                    label: `الفعلي (${appState.unit})`, 
+                    data: actuals.map(v => v * appState.unitMultiplier), 
+                    borderColor: '#0284c7', 
+                    backgroundColor: 'rgba(2, 132, 199, 0.1)', 
+                    fill: true, 
+                    tension: 0.3, 
+                    borderWidth: 2.5, 
+                    pointRadius: 4 
+                }
+            ];
+
+            if (targets && targets.length > 0 && targets.some(t => t > 0)) {
+                datasets.push({ 
+                    label: `الهدف (${appState.unit})`, 
+                    data: targets.map(v => v * appState.unitMultiplier), 
+                    borderColor: '#f59e0b', 
+                    borderDash: [5, 5], 
+                    borderWidth: 2, 
+                    fill: false, 
+                    pointRadius: 3 
+                });
+            }
+
+            stationMonthlyChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: { labels: MONTHS, datasets: datasets },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { font: { family: 'Cairo' } } } }
+                }
+            });
+        }
+
+        // Modals
+        function openAddStationModal() { document.getElementById('addStationModal').classList.remove('hidden'); }
+        function closeAddStationModal() { document.getElementById('addStationModal').classList.add('hidden'); }
+
+        function handleAddStationSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('newStationName').value.trim();
+            const address = document.getElementById('newStationAddress').value.trim();
+
+            const newMain = {
+                id: 'st_main_' + Date.now(),
+                name: name,
+                address: address,
+                annualNotes: '',
+                subStations: []
+            };
+
+            appState.stations.push(newMain);
+            saveStateToLocalStorage();
+            closeAddStationModal();
+            renderSidebar();
+            switchTab(newMain.id);
+            document.getElementById('newStationName').value = '';
+            document.getElementById('newStationAddress').value = '';
+        }
+
+        function openAddSubStationModal() { document.getElementById('addSubStationModal').classList.remove('hidden'); }
+        function closeAddSubStationModal() { document.getElementById('addSubStationModal').classList.add('hidden'); }
+
+        function handleAddSubStationSubmit(e) {
+            e.preventDefault();
+            const targetInfo = findTarget(appState.activeTab);
+            if (targetInfo.type !== 'main') return;
+
+            const name = document.getElementById('newSubStationName').value.trim();
+            const capacity = parseFloat(document.getElementById('newSubStationCapacity').value) || 0;
+            const invCount = parseInt(document.getElementById('newSubStationInverters').value) || 3;
+            const annualTarget = parseFloat(document.getElementById('newSubStationAnnualTarget').value) || 600;
+
+            // ✅ حقول القراءات مع إظهار افتراضي
+            const inverters = [];
+            for (let i = 0; i < invCount; i++) inverters.push(`INV-${i + 1}`);
+
+            const monthlyTarget = annualTarget / 12;
+            const newSub = {
+                id: 'sub_' + Date.now(),
+                name: name,
+                capacity: capacity,
+                inverters: inverters,
+                annualTarget: annualTarget,
+                annualNotes: '',
+                monthlyData: MONTHS.map(m => ({
+                    month: m,
+                    values: new Array(invCount).fill(0),
+                    target: parseFloat(monthlyTarget.toFixed(1)),
+                    note: ''
+                }))
+            };
+
+            targetInfo.mainStation.subStations.push(newSub);
+            saveStateToLocalStorage();
+            closeAddSubStationModal();
+            renderSidebar();
+            switchTab(newSub.id);
+        }
+
+        // أعمدة الجدول القابلة للإظهار/الإخفاء (ليست الإنفرترات)
+        const TABLE_COLUMN_DEFS = [
+            { key: 'actual', label: 'الفعلي' },
+            { key: 'target', label: 'الهدف' },
+            { key: 'deviation', label: 'الانحراف' },
+            { key: 'achievement', label: 'الإنجاز' },
+            { key: 'notes', label: 'ملاحظات' }
+        ];
+
+        function defaultColumnVisibility() {
+            return { actual: true, target: true, deviation: true, achievement: true, notes: true };
+        }
+
+        function normalizeColumnVisibility(obj) {
+            const base = defaultColumnVisibility();
+            if (!obj || typeof obj !== 'object') return base;
+            TABLE_COLUMN_DEFS.forEach(c => {
+                if (obj[c.key] === false) base[c.key] = false;
+                else base[c.key] = true;
+            });
+            // يجب إظهار عمود واحد على الأقل
+            if (!TABLE_COLUMN_DEFS.some(c => base[c.key])) base.actual = true;
+            return base;
+        }
+
+        let editingColumnVisibility = defaultColumnVisibility();
+        let editingFields = []; // أسماء الإنفرترات أثناء التعديل
+
+        function normalizeField(f) {
+            if (f && typeof f === 'object' && f.name !== undefined) {
+                return { name: String(f.name), visible: true };
+            }
+            return { name: String(f == null ? 'INV-1' : f), visible: true };
+        }
+
+        function normalizeFieldsList(list) {
+            if (!list || !list.length) return [{ name: 'INV-1', visible: true }];
+            return list.map(normalizeField);
+        }
+
+        function fieldNamesOf(list) {
+            return normalizeFieldsList(list).map(f => f.name);
+        }
+
+        function setEditingFromList(list) {
+            editingFields = normalizeFieldsList(list);
+        }
+
+        function getEditableLeafForTarget(targetInfo) {
+            // للمحطة الرئيسية/المجمع: إن وُجدت محطة فرعية واحدة فقط نعدّل بياناتها مباشرة
+            if (targetInfo.type === 'main') {
+                const leaves = getLeafStations(targetInfo.mainStation);
+                const hasGroup = (targetInfo.mainStation.subStations || []).some(s => s.isGroup);
+                if (leaves.length === 1 && !hasGroup) return leaves[0];
+                return null;
+            }
+            if (targetInfo.type === 'group') {
+                const leaves = getLeafStations(targetInfo.group);
+                if (leaves.length === 1) return leaves[0];
+                return null;
+            }
+            if (targetInfo.type === 'sub') return targetInfo.subStation;
+            return null;
+        }
+
+        function openEditStationModal() {
+            const targetInfo = findTarget(appState.activeTab);
+            if (targetInfo.type === 'overview') return;
+
+            document.getElementById('editSubOnlyFields').classList.remove('hidden');
+            document.getElementById('editInvertersSection').classList.remove('hidden');
+
+            let name = '', address = '', capacity = 0, annualTarget = 0;
+            setEditingFromList([{ name: 'INV-1', visible: true }]);
+            editingColumnVisibility = defaultColumnVisibility();
+
+            if (targetInfo.type === 'main') {
+                const main = targetInfo.mainStation;
+                name = main.name;
+                address = main.address || main.name || '';
+                const leaf = getEditableLeafForTarget(targetInfo);
+                if (leaf) {
+                    capacity = leaf.capacity || 0;
+                    annualTarget = leaf.annualTarget || 0;
+                    setEditingFromList(leaf.inverters || []);
+                    editingColumnVisibility = normalizeColumnVisibility(leaf.columnVisibility);
+                } else {
+                    const mt = calculateMainTotals(main);
+                    capacity = mt.capacity || 0;
+                    annualTarget = mt.target || 0;
+                    editingColumnVisibility = normalizeColumnVisibility(main.columnVisibility);
+                }
+            } else if (targetInfo.type === 'group') {
+                const group = targetInfo.group;
+                name = group.name;
+                address = group.address || group.name || '';
+                const leaf = getEditableLeafForTarget(targetInfo);
+                if (leaf) {
+                    capacity = leaf.capacity || 0;
+                    annualTarget = leaf.annualTarget || 0;
+                    setEditingFromList(leaf.inverters || []);
+                    editingColumnVisibility = normalizeColumnVisibility(leaf.columnVisibility);
+                } else {
+                    const gt = calculateSubTotals(group);
+                    capacity = gt.capacity || 0;
+                    annualTarget = gt.target || 0;
+                    editingColumnVisibility = normalizeColumnVisibility(group.columnVisibility);
+                }
+            } else {
+                const sub = targetInfo.subStation;
+                name = sub.name;
+                address = sub.name;
+                capacity = sub.capacity || 0;
+                annualTarget = sub.annualTarget || 0;
+                setEditingFromList(sub.inverters || []);
+                editingColumnVisibility = normalizeColumnVisibility(sub.columnVisibility);
+            }
+
+            document.getElementById('editStationName').value = name;
+            document.getElementById('editStationAddress').value = address;
+            document.getElementById('editStationCapacity').value = capacity;
+            document.getElementById('editStationAnnualTarget').value = annualTarget;
+            document.getElementById('editInverterCount').value = editingFields.length;
+            updateFieldsCountBadge();
+
+            document.getElementById('editStationModal').classList.remove('hidden');
+        }
+
+        function closeEditStationModal() {
+            document.getElementById('editStationModal').classList.add('hidden');
+            closeFieldsManagerModal();
+        }
+
+        function updateFieldsCountBadge() {
+            const badge = document.getElementById('fieldsCountBadge');
+            const vis = TABLE_COLUMN_DEFS.filter(c => editingColumnVisibility[c.key]).length;
+            if (badge) badge.textContent = String(vis);
+        }
+
+        function openFieldsManagerModal() {
+            renderFieldsManagerList();
+            document.getElementById('fieldsManagerModal').classList.remove('hidden');
+        }
+
+        function closeFieldsManagerModal() {
+            const modal = document.getElementById('fieldsManagerModal');
+            if (modal) modal.classList.add('hidden');
+            updateFieldsCountBadge();
+        }
+
+        function renderFieldsManagerList() {
+            const container = document.getElementById('fieldsManagerList');
+            if (!container) return;
+            let html = '';
+            TABLE_COLUMN_DEFS.forEach(col => {
+                const checked = editingColumnVisibility[col.key] ? 'checked' : '';
+                const borderCls = editingColumnVisibility[col.key] ? 'border-sky-300 bg-sky-50' : 'border-slate-200 bg-slate-50 opacity-70';
+                html += `
+                    <label class="inline-flex items-center gap-2 border rounded-xl px-3 py-2 cursor-pointer select-none ${borderCls}">
+                        <input type="checkbox" ${checked}
+                            onchange="toggleColumnVisibility('${col.key}', this.checked)"
+                            class="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+                        <span class="text-sm font-bold text-slate-800">${col.label}</span>
+                    </label>
+                `;
+            });
+            container.innerHTML = html;
+            updateFieldsCountBadge();
+        }
+
+        function toggleColumnVisibility(key, visible) {
+            editingColumnVisibility[key] = !!visible;
+            if (!TABLE_COLUMN_DEFS.some(c => editingColumnVisibility[c.key])) {
+                editingColumnVisibility[key] = true;
+                Swal.fire({ title: 'تنبيه', text: 'يجب إظهار عمود واحد على الأقل.', icon: 'warning', confirmButtonText: 'حسناً' });
+            }
+            renderFieldsManagerList();
+        }
+
+        function syncInvertersFromCount(countVal) {
+            let count = parseInt(countVal, 10);
+            if (isNaN(count) || count < 1) count = 1;
+            if (count > 30) count = 30;
+            document.getElementById('editInverterCount').value = count;
+            const current = editingFields.length;
+            if (count > current) {
+                for (let i = current; i < count; i++) editingFields.push({ name: `INV-${i + 1}`, visible: true });
+            } else if (count < current) {
+                editingFields = editingFields.slice(0, count);
+            }
+        }
+
+        function applyLeafEditFields(leaf, name) {
+            if (!leaf) return;
+            if (name) leaf.name = name;
+            leaf.capacity = parseFloat(document.getElementById('editStationCapacity').value) || 0;
+
+            const newTarget = parseFloat(document.getElementById('editStationAnnualTarget').value) || 0;
+            if (leaf.annualTarget !== newTarget) {
+                leaf.annualTarget = newTarget;
+                const monthlyTarget = newTarget / 12;
+                if (leaf.monthlyData) {
+                    leaf.monthlyData.forEach(m => m.target = parseFloat(monthlyTarget.toFixed(1)));
+                }
+            }
+
+            const oldCount = fieldNamesOf(leaf.inverters).length;
+            const newCount = editingFields.length;
+            // الإنفرترات بأسمائها فقط
+            leaf.inverters = editingFields.map(f => f.name);
+            leaf.columnVisibility = normalizeColumnVisibility(editingColumnVisibility);
+
+            if (leaf.monthlyData && newCount !== oldCount) {
+                leaf.monthlyData.forEach(m => {
+                    if (!m.values) m.values = [];
+                    if (newCount > oldCount) {
+                        for (let i = oldCount; i < newCount; i++) m.values.push(0);
+                    } else {
+                        m.values = m.values.slice(0, newCount);
+                    }
+                });
+            }
+        }
+
+        function handleEditStationSubmit(e) {
+            e.preventDefault();
+            const targetInfo = findTarget(appState.activeTab);
+            if (targetInfo.type === 'overview') return;
+
+            const name = document.getElementById('editStationName').value.trim();
+            const address = document.getElementById('editStationAddress').value.trim();
+            const leaf = getEditableLeafForTarget(targetInfo);
+
+            if (targetInfo.type === 'main') {
+                targetInfo.mainStation.name = name;
+                targetInfo.mainStation.address = address || name;
+                if (leaf) {
+                    applyLeafEditFields(leaf, leaf.name);
+                } else {
+                    targetInfo.mainStation.columnVisibility = normalizeColumnVisibility(editingColumnVisibility);
+                }
+            } else if (targetInfo.type === 'group') {
+                targetInfo.group.name = name;
+                targetInfo.group.address = address || name;
+                if (leaf) {
+                    applyLeafEditFields(leaf, leaf.name);
+                } else {
+                    targetInfo.group.columnVisibility = normalizeColumnVisibility(editingColumnVisibility);
+                }
+            } else {
+                applyLeafEditFields(targetInfo.subStation, name);
+            }
+
+            saveStateToLocalStorage();
+            closeEditStationModal();
+            renderSidebar();
+            renderStationTab(appState.activeTab);
+            renderGlobalStats();
+            Swal.fire({ title: 'تم الحفظ', icon: 'success', timer: 1500, showConfirmButton: false });
+        }
+
+        function deleteCurrentStationOrSub() {
+            const targetInfo = findTarget(appState.activeTab);
+            if (targetInfo.type === 'overview') return;
+
+            let title = '';
+            if (targetInfo.type === 'main') title = targetInfo.mainStation.name;
+            else if (targetInfo.type === 'group') title = targetInfo.group.name;
+            else title = targetInfo.subStation.name;
+
+            Swal.fire({
+                title: `حذف ${title}؟`,
+                text: "لن تتمكن من استرجاع البيانات بعد الحذف.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'نعم، حذف',
+                cancelButtonText: 'إلغاء'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (targetInfo.type === 'main') {
+                        appState.stations = appState.stations.filter(s => s.id !== targetInfo.mainStation.id);
+                        switchTab('overview');
+                    } else if (targetInfo.type === 'group') {
+                        targetInfo.mainStation.subStations = targetInfo.mainStation.subStations.filter(s => s.id !== targetInfo.group.id);
+                        switchTab(targetInfo.mainStation.id);
+                    } else if (targetInfo.group) {
+                        targetInfo.group.subStations = targetInfo.group.subStations.filter(s => s.id !== targetInfo.subStation.id);
+                        switchTab(targetInfo.group.id);
+                    } else {
+                        targetInfo.mainStation.subStations = targetInfo.mainStation.subStations.filter(s => s.id !== targetInfo.subStation.id);
+                        switchTab(targetInfo.mainStation.id);
+                    }
+                    saveStateToLocalStorage();
+                    renderSidebar();
+                }
+            });
+        }
+
+        function resetDataWithConfirmation() {
+            Swal.fire({
+                title: 'إعادة تعيين النظام؟',
+                text: 'سيتم استعادة البيانات الافتراضية.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'نعم، إعادة تعيين',
+                cancelButtonText: 'إلغاء'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    appState.stations = JSON.parse(JSON.stringify(INITIAL_DATA));
+                    saveStateToLocalStorage();
+                    renderSidebar();
+                    switchTab('overview');
+                    Swal.fire({ title: 'تمت الإعادة', icon: 'success', timer: 1500, showConfirmButton: false });
+                }
+            });
+        }
+
+        // ============================================================
+        // ✅ تصدير Excel احترافي بالألوان (ExcelJS)
+        // ============================================================
+        function sanitizeSheetName(name) {
+            return String(name).replace(/[\\\/\?\*\[\]:]/g, '_').substring(0, 31) || 'Sheet';
+        }
+
+        function excelNum(v) {
+            const n = Number(v);
+            return isNaN(n) ? 0 : Math.round(n * 1000) / 1000;
+        }
+
+        async function exportAllStationsExcel() {
+            if (typeof ExcelJS === 'undefined') {
+                Swal.fire({ title: 'خطأ', text: 'مكتبة Excel غير محمّلة. تحقق من الاتصال بالإنترنت.', icon: 'error', confirmButtonText: 'حسناً' });
+                return;
+            }
+
+            Swal.fire({
+                title: 'جاري إنشاء التقرير...',
+                text: 'يتم تجهيز ملف Excel المنسّق',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const wb = new ExcelJS.Workbook();
+                wb.creator = 'نظام محطات الطاقة الشمسية Pro 2026';
+                wb.created = new Date();
+                const unit = appState.unit;
+                const mul = appState.unitMultiplier;
+
+                const COLORS = {
+                    titleBg: '0C4A6E',
+                    titleFg: 'FFFFFF',
+                    subtitleBg: 'E0F2FE',
+                    subtitleFg: '075985',
+                    headerBg: '0284C7',
+                    headerFg: 'FFFFFF',
+                    sectionBg: '1E293B',
+                    sectionFg: 'FFFFFF',
+                    totalBg: '0F172A',
+                    totalFg: 'FFFFFF',
+                    monthBg: 'F1F5F9',
+                    actualBg: 'FEF3C7',
+                    goodFg: '059669',
+                    badFg: 'DC2626',
+                    altRow: 'F8FAFC',
+                    border: 'CBD5E1',
+                    white: 'FFFFFF',
+                    dark: '0F172A'
+                };
+
+                function styleTitle(cell) {
+                    cell.font = { bold: true, size: 16, color: { argb: 'FF' + COLORS.titleFg }, name: 'Arial' };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + COLORS.titleBg } };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rtl' };
+                }
+                function styleSubtitle(cell) {
+                    cell.font = { bold: true, size: 11, color: { argb: 'FF' + COLORS.subtitleFg }, name: 'Arial' };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + COLORS.subtitleBg } };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rtl' };
+                }
+                function styleHeader(cell) {
+                    cell.font = { bold: true, size: 11, color: { argb: 'FF' + COLORS.headerFg }, name: 'Arial' };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + COLORS.headerBg } };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rtl' };
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF' + COLORS.border } },
+                        bottom: { style: 'thin', color: { argb: 'FF' + COLORS.border } },
+                        left: { style: 'thin', color: { argb: 'FF' + COLORS.border } },
+                        right: { style: 'thin', color: { argb: 'FF' + COLORS.border } }
+                    };
+                }
+                function styleSection(cell) {
+                    cell.font = { bold: true, size: 12, color: { argb: 'FF' + COLORS.sectionFg }, name: 'Arial' };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + COLORS.sectionBg } };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rtl' };
+                }
+                function styleTotal(cell) {
+                    cell.font = { bold: true, size: 11, color: { argb: 'FF' + COLORS.totalFg }, name: 'Arial' };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + COLORS.totalBg } };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rtl' };
+                }
+                function styleData(cell, opts = {}) {
+                    cell.font = { size: 10, color: { argb: 'FF' + (opts.color || COLORS.dark) }, bold: !!opts.bold, name: 'Arial' };
+                    cell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rtl' };
+                    if (opts.fill) {
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + opts.fill } };
+                    }
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FFEEEEEE' } },
+                        bottom: { style: 'thin', color: { argb: 'FFEEEEEE' } },
+                        left: { style: 'thin', color: { argb: 'FFEEEEEE' } },
+                        right: { style: 'thin', color: { argb: 'FFEEEEEE' } }
+                    };
+                    if (typeof cell.value === 'number') {
+                        cell.numFmt = '#,##0.00';
+                    }
+                }
+                function applyRowFill(row, colCount, color) {
+                    for (let c = 1; c <= colCount; c++) {
+                        const cell = row.getCell(c);
+                        if (!cell.fill || !cell.fill.fgColor) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF' + color } };
+                        }
+                    }
+                }
+
+                // ========== شيت الملخص العام ==========
+                const wsSummary = wb.addWorksheet(sanitizeSheetName('الملخص العام'), {
+                    views: [{ rightToLeft: true, state: 'frozen', ySplit: 3 }]
+                });
+                wsSummary.columns = [
+                    { width: 6 }, { width: 28 }, { width: 10 }, { width: 14 },
+                    { width: 14 }, { width: 14 }, { width: 14 }, { width: 12 }
+                ];
+
+                wsSummary.mergeCells(1, 1, 1, 8);
+                const t1 = wsSummary.getCell(1, 1);
+                t1.value = 'تقرير محطات الطاقة الشمسية — الملخص العام 2026';
+                styleTitle(t1);
+                wsSummary.getRow(1).height = 28;
+
+                wsSummary.mergeCells(2, 1, 2, 8);
+                const t2 = wsSummary.getCell(2, 1);
+                t2.value = `الوحدة: ${unit}  |  تاريخ التصدير: ${new Date().toLocaleDateString('ar-EG')}  |  عدد المحطات: ${appState.stations.length}`;
+                styleSubtitle(t2);
+                wsSummary.getRow(2).height = 22;
+
+                const headerLabels = ['#', 'اسم المحطة', 'فرعيات', 'القدرة (kWp)', `الفعلي (${unit})`, `الهدف (${unit})`, `الانحراف (${unit})`, 'الإنجاز %'];
+                const hr = wsSummary.getRow(4);
+                headerLabels.forEach((h, i) => {
+                    const cell = hr.getCell(i + 1);
+                    cell.value = h;
+                    styleHeader(cell);
+                });
+                hr.height = 22;
+
+                let grandActual = 0, grandTarget = 0, grandCapacity = 0, grandLeaves = 0;
+                appState.stations.forEach((main, idx) => {
+                    const mt = calculateMainTotals(main);
+                    const leaves = getLeafStations(main).length;
+                    const diff = mt.actual - mt.target;
+                    const pct = mt.target > 0 ? (mt.actual / mt.target * 100) : 0;
+                    grandActual += mt.actual;
+                    grandTarget += mt.target;
+                    grandCapacity += mt.capacity;
+                    grandLeaves += leaves;
+
+                    const row = wsSummary.getRow(5 + idx);
+                    const vals = [
+                        idx + 1,
+                        main.name,
+                        leaves,
+                        excelNum(mt.capacity),
+                        excelNum(mt.actual * mul),
+                        excelNum(mt.target * mul),
+                        excelNum(diff * mul),
+                        Math.round(pct * 10) / 10
+                    ];
+                    vals.forEach((v, i) => {
+                        const cell = row.getCell(i + 1);
+                        cell.value = v;
+                        const isGood = diff >= 0;
+                        if (i === 6) styleData(cell, { color: isGood ? COLORS.goodFg : COLORS.badFg, bold: true });
+                        else if (i === 7) {
+                            styleData(cell, { color: pct >= 100 ? COLORS.goodFg : (pct < 80 ? COLORS.badFg : COLORS.dark), bold: true });
+                            cell.numFmt = '0.0"%"';
+                        } else if (i === 4) styleData(cell, { fill: COLORS.actualBg, bold: true });
+                        else styleData(cell, idx % 2 ? { fill: COLORS.altRow } : {});
+                    });
+                });
+
+                const totalRowIdx = 5 + appState.stations.length;
+                const tr = wsSummary.getRow(totalRowIdx);
+                const grandDiff = grandActual - grandTarget;
+                const grandPct = grandTarget > 0 ? (grandActual / grandTarget * 100) : 0;
+                [
+                    '', 'المجموع الكلي', grandLeaves, excelNum(grandCapacity),
+                    excelNum(grandActual * mul), excelNum(grandTarget * mul),
+                    excelNum(grandDiff * mul), Math.round(grandPct * 10) / 10
+                ].forEach((v, i) => {
+                    const cell = tr.getCell(i + 1);
+                    cell.value = v;
+                    styleTotal(cell);
+                    if (i === 7) cell.numFmt = '0.0"%"';
+                    else if (typeof v === 'number' && i >= 3) cell.numFmt = '#,##0.00';
+                });
+
+                // ========== شيت لكل محطة ==========
+                for (const main of appState.stations) {
+                    const ws = wb.addWorksheet(sanitizeSheetName(main.name), {
+                        views: [{ rightToLeft: true, state: 'frozen', ySplit: 3 }]
+                    });
+                    const leaves = getLeafStations(main);
+                    const mainTotals = calculateMainTotals(main);
+                    let maxCols = 8;
+                    leaves.forEach(leaf => {
+                        const n = fieldNamesOf(leaf.inverters).length + 6;
+                        if (n > maxCols) maxCols = n;
+                    });
+                    ws.columns = Array.from({ length: maxCols }, (_, i) => ({ width: i === 1 ? 26 : 13 }));
+
+                    let r = 1;
+                    ws.mergeCells(r, 1, r, Math.min(maxCols, 8));
+                    const titleCell = ws.getCell(r, 1);
+                    titleCell.value = `المحطة الرئيسية: ${main.name}`;
+                    styleTitle(titleCell);
+                    ws.getRow(r).height = 28;
+                    r++;
+
+                    ws.mergeCells(r, 1, r, Math.min(maxCols, 8));
+                    const subCell = ws.getCell(r, 1);
+                    subCell.value = `الموقع: ${main.address || main.name}  |  الوحدة: ${unit}  |  القدرة: ${Math.round(mainTotals.capacity * 10) / 10} kWp`;
+                    styleSubtitle(subCell);
+                    r += 2;
+
+                    // ملخص
+                    ws.mergeCells(r, 1, r, 6);
+                    styleSection(ws.getCell(r, 1));
+                    ws.getCell(r, 1).value = 'ملخص المحطة';
+                    r++;
+                    const sumHeaders = ['القدرة (kWp)', 'فرعيات', `الفعلي (${unit})`, `الهدف (${unit})`, `الانحراف (${unit})`, 'الإنجاز %'];
+                    sumHeaders.forEach((h, i) => { const c = ws.getCell(r, i + 1); c.value = h; styleHeader(c); });
+                    r++;
+                    const mDiff = mainTotals.actual - mainTotals.target;
+                    const mPct = mainTotals.target > 0 ? (mainTotals.actual / mainTotals.target * 100) : 0;
+                    [
+                        excelNum(mainTotals.capacity), leaves.length,
+                        excelNum(mainTotals.actual * mul), excelNum(mainTotals.target * mul),
+                        excelNum(mDiff * mul), Math.round(mPct * 10) / 10
+                    ].forEach((v, i) => {
+                        const c = ws.getCell(r, i + 1);
+                        c.value = v;
+                        if (i === 4) styleData(c, { color: mDiff >= 0 ? COLORS.goodFg : COLORS.badFg, bold: true });
+                        else if (i === 5) { styleData(c, { color: mPct >= 100 ? COLORS.goodFg : COLORS.badFg, bold: true }); c.numFmt = '0.0"%"'; }
+                        else if (i === 2) styleData(c, { fill: COLORS.actualBg, bold: true });
+                        else styleData(c);
+                    });
+                    r += 2;
+
+                    // فهرس الفرعيات إن وُجدت أكثر من واحدة
+                    if (leaves.length > 1) {
+                        ws.mergeCells(r, 1, r, 7);
+                        styleSection(ws.getCell(r, 1));
+                        ws.getCell(r, 1).value = 'فهرس المحطات الفرعية';
+                        r++;
+                        ['#', 'اسم المحطة الفرعية', 'القدرة (kWp)', `الهدف (${unit})`, `الفعلي (${unit})`, `الانحراف (${unit})`, 'الإنجاز %']
+                            .forEach((h, i) => { const c = ws.getCell(r, i + 1); c.value = h; styleHeader(c); });
+                        r++;
+                        leaves.forEach((leaf, idx) => {
+                            const st = calculateSubTotals(leaf);
+                            const d = st.actual - st.target;
+                            const p = st.target > 0 ? (st.actual / st.target * 100) : 0;
+                            [
+                                idx + 1, leaf.name, excelNum(leaf.capacity || 0),
+                                excelNum(st.target * mul), excelNum(st.actual * mul),
+                                excelNum(d * mul), Math.round(p * 10) / 10
+                            ].forEach((v, i) => {
+                                const c = ws.getCell(r, i + 1);
+                                c.value = v;
+                                if (i === 5) styleData(c, { color: d >= 0 ? COLORS.goodFg : COLORS.badFg, bold: true });
+                                else if (i === 6) { styleData(c, { color: p >= 100 ? COLORS.goodFg : COLORS.badFg, bold: true }); c.numFmt = '0.0"%"'; }
+                                else styleData(c, idx % 2 ? { fill: COLORS.altRow } : {});
+                            });
+                            r++;
+                        });
+                        r++;
+                    }
+
+                    // تفاصيل كل محطة فرعية
+                    for (const leaf of leaves) {
+                        const names = fieldNamesOf(leaf.inverters);
+                        const colCount = 1 + names.length + 4;
+
+                        ws.mergeCells(r, 1, r, colCount);
+                        styleSection(ws.getCell(r, 1));
+                        ws.getCell(r, 1).value = `${leaf.name}  ·  ${leaf.capacity || 0} kWp`;
+                        r++;
+
+                        const headers = ['الشهر', ...names, `الفعلي (${unit})`, `الهدف (${unit})`, `الانحراف (${unit})`, 'الإنجاز %'];
+                        headers.forEach((h, i) => {
+                            const c = ws.getCell(r, i + 1);
+                            c.value = h;
+                            styleHeader(c);
+                            if (i === 1 + names.length) {
+                                c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD97706' } };
+                            }
+                        });
+                        r++;
+
+                        const invTotals = names.map(() => 0);
+                        let totA = 0, totT = 0;
+
+                        (leaf.monthlyData || []).forEach((m, mIdx) => {
+                            const monthSum = (m.values || []).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+                            const target = m.target || 0;
+                            const diff = monthSum - target;
+                            const pct = target > 0 ? (monthSum / target * 100) : 0;
+                            totA += monthSum;
+                            totT += target;
+                            names.forEach((_, i) => { invTotals[i] += parseFloat((m.values || [])[i]) || 0; });
+
+                            const rowVals = [
+                                m.month,
+                                ...names.map((_, i) => excelNum((parseFloat((m.values || [])[i]) || 0) * mul)),
+                                excelNum(monthSum * mul),
+                                excelNum(target * mul),
+                                excelNum(diff * mul),
+                                Math.round(pct * 10) / 10
+                            ];
+                            rowVals.forEach((v, i) => {
+                                const c = ws.getCell(r, i + 1);
+                                c.value = v;
+                                if (i === 0) styleData(c, { fill: COLORS.monthBg, bold: true });
+                                else if (i === 1 + names.length) styleData(c, { fill: COLORS.actualBg, bold: true });
+                                else if (i === 3 + names.length) styleData(c, { color: diff >= 0 ? COLORS.goodFg : COLORS.badFg, bold: true });
+                                else if (i === 4 + names.length) {
+                                    styleData(c, { color: pct >= 100 ? COLORS.goodFg : (pct < 80 ? COLORS.badFg : COLORS.dark), bold: true });
+                                    c.numFmt = '0.0"%"';
+                                } else styleData(c, mIdx % 2 ? { fill: COLORS.altRow } : {});
+                            });
+                            r++;
+                        });
+
+                        const totDiff = totA - totT;
+                        const totPct = totT > 0 ? (totA / totT * 100) : 0;
+                        const totalVals = [
+                            'الإجمالي',
+                            ...invTotals.map(v => excelNum(v * mul)),
+                            excelNum(totA * mul),
+                            excelNum(totT * mul),
+                            excelNum(totDiff * mul),
+                            Math.round(totPct * 10) / 10
+                        ];
+                        totalVals.forEach((v, i) => {
+                            const c = ws.getCell(r, i + 1);
+                            c.value = v;
+                            styleTotal(c);
+                            if (i === totalVals.length - 1) c.numFmt = '0.0"%"';
+                            else if (typeof v === 'number') c.numFmt = '#,##0.00';
+                        });
+                        r += 2;
+                    }
+                }
+
+                const buffer = await wb.xlsx.writeBuffer();
+                const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                const fileName = `تقرير_محطات_الطاقة_الشمسية_${unit}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                if (typeof saveAs === 'function') {
+                    saveAs(blob, fileName);
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+
+                Swal.fire({
+                    title: 'تم التصدير بنجاح',
+                    html: `تم إنشاء ملف Excel منسّق بالألوان:<br><strong>شيت ملخص عام + شيت لكل محطة</strong>`,
+                    icon: 'success',
+                    timer: 2500,
+                    showConfirmButton: false
+                });
+            } catch (err) {
+                console.error(err);
+                Swal.fire({ title: 'فشل التصدير', text: String(err.message || err), icon: 'error', confirmButtonText: 'حسناً' });
+            }
+        }
+
+        function exportAllDataJSON() {
+            const exportPayload = {
+                version: '2026.1',
+                exportedAt: new Date().toISOString(),
+                unit: appState.unit,
+                stations: appState.stations
+            };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
+            const downloadAnchor = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0, 10);
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `نسخة_احتياطية_محطات_شمسية_${dateStr}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+
+            Swal.fire({
+                title: 'تم التصدير',
+                text: 'تم حفظ ملف JSON بنجاح. يحتوي على هيكل المحطات وجميع القراءات.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        function importDataJSON(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            event.target.value = '';
+
+            const fileReader = new FileReader();
+            fileReader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+
+                    let stations = null;
+                    let unit = 'MWh';
+
+                    if (imported && Array.isArray(imported.stations)) {
+                        stations = imported.stations;
+                        if (imported.unit) unit = imported.unit;
+                    } else if (Array.isArray(imported)) {
+                        stations = imported;
+                    }
+
+                    if (!stations || stations.length === 0) {
+                        Swal.fire({
+                            title: 'ملف غير صالح',
+                            text: 'الملف لا يحتوي على هيكل محطات صحيح. تأكد أنه ملف JSON صادر من هذا النظام.',
+                            icon: 'error',
+                            confirmButtonText: 'حسناً'
+                        });
+                        return;
+                    }
+
+                    const valid = stations.every(s => s && s.id && s.name);
+                    if (!valid) {
+                        Swal.fire({
+                            title: 'بيانات ناقصة',
+                            text: 'بعض المحطات في الملف تفتقد معرف أو اسم. لا يمكن الاستيراد.',
+                            icon: 'error',
+                            confirmButtonText: 'حسناً'
+                        });
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'تأكيد الاستيراد',
+                        html: `سيتم استبدال جميع البيانات الحالية بـ <strong>${stations.length}</strong> محطة رئيسية من الملف.<br><br>هل تريد المتابعة؟`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#059669',
+                        confirmButtonText: 'نعم، استيراد',
+                        cancelButtonText: 'إلغاء'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            appState.stations = stations;
+                            appState.unit = unit;
+                            appState.unitMultiplier = unit === 'kWh' ? 1000 : 1;
+                            document.getElementById('unitSelector').value = unit;
+                            updateUnitLabels();
+                            saveStateToLocalStorage();
+                            renderSidebar();
+                            switchTab('overview');
+                            renderGlobalStats();
+
+                            Swal.fire({
+                                title: 'تم الاستيراد بنجاح',
+                                text: `تم تحميل ${stations.length} محطة رئيسية مع هيكلها وقراءاتها.`,
+                                icon: 'success',
+                                timer: 2200,
+                                showConfirmButton: false
+                            });
+                        }
+                    });
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire({
+                        title: 'خطأ في القراءة',
+                        text: 'الملف ليس JSON صالحاً أو تالف. جرّب ملفاً آخر.',
+                        icon: 'error',
+                        confirmButtonText: 'حسناً'
+                    });
+                }
+            };
+            fileReader.readAsText(file);
+        }
+    </script>
+    <div id="saveToast" class="save-toast no-print"><i class="fa-solid fa-check ml-2 text-emerald-400"></i> تم الحفظ تلقائياً</div>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(console.error));
+}
+</script>
+</body>
+</html>
