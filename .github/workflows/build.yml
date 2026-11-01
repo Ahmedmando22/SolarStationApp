@@ -27,7 +27,7 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build Android App (APK)
+      - name: Build Java Application
         run: |
           BUILD_FILE_PATH=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
           if [ -z "$BUILD_FILE_PATH" ]; then
@@ -37,12 +37,12 @@ jobs:
           PROJECT_DIR=$(dirname "$BUILD_FILE_PATH")
           cd "$PROJECT_DIR"
           
-          # تشغيل أمر بناء حزمة الأندرويد داخل مجلد التطبيق الفرعي مباشرة
-          gradle :app:assembleDebug
+          # الأمر الصحيح لبناء تطبيق الجافا داخل مجلد app
+          gradle :app:build -x test
 
-      - name: Upload APK Artifact
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: solar-station-app
           path: |
-            **/build/outputs/apk/debug/*.apk
+            **/build/libs/*.jar
