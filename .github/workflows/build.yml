@@ -27,7 +27,7 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: Build Android App
+      - name: Check Available Tasks
         run: |
           BUILD_FILE_PATH=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
           if [ -z "$BUILD_FILE_PATH" ]; then
@@ -37,17 +37,5 @@ jobs:
           PROJECT_DIR=$(dirname "$BUILD_FILE_PATH")
           cd "$PROJECT_DIR"
           
-          # تشغيل أمر توليد حزمة الأندرويد الأساسية مباشرة
-          gradle assemble
-          
-          # التأكد من وجود ملفات apk في المجلد بعد البناء
-          echo "==== Checking Generated Files ===="
-          find . -name "*.apk" -o -name "*.aar"
-
-      - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: solar-station-app
-          path: |
-            **/*.apk
-            **/*.aar
+          # أمر لطباعة كل المهام المتاحة في المشروع لنعرف المشكلة
+          gradle tasks --all
