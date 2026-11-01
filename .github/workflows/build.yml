@@ -22,25 +22,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Setup Gradle Wrapper and Build
+      - name: Force Standard Build
         run: |
-          # 1. البحث عن مجلد المشروع الحقيقي
           BUILD_FILE_PATH=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
           PROJECT_DIR=$(dirname "$BUILD_FILE_PATH")
           cd "$PROJECT_DIR"
           
-          # 2. توليد ملف الـ gradlew الناقص فوراً وبشكل رسمي
-          npm install -g gradle-to-js || true
-          curl -sL https://githubusercontent.com -o gradlew
-          chmod +x gradlew
-          
-          # 3. تشغيل البناء الأضمن لتوليد ملفات التطبيق (JAR أو APK) وتخطي الاختبارات المزعجة
-          ./gradlew build -x test --no-daemon || ./gradlew :app:assembleDebug --no-daemon || ./gradlew :app:jar --no-daemon
+          # تثبيت أداة Gradle مستقلة لتوليد ملف JAR مباشرة بدون تعقيدات الهياكل المفقودة
+          sudo apt-get update && sudo apt-get install -y gradle
+          gradle jar --no-daemon || gradle build -x test --no-daemon
 
-      - name: Upload All Project Deliverables
+      - name: Save Mobile App Deliverable
         uses: actions/upload-artifact@v4
         with:
           name: solar-station-app
           path: |
-            **/build/outputs/apk/**/*.apk
             **/build/libs/*.jar
+            **/build/outputs/apk/**/*.apk
