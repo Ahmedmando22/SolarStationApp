@@ -50,4 +50,3 @@ jobs:
         run: |
           cd ${{ env.GRADLEW_DIR }}
           ./gradlew assembleDebug
-          
