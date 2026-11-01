@@ -22,20 +22,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Force Standard Build
+      - name: Setup Latest Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10' # تحديث النسخة لحل خطأ الـ dependencyResolutionManagement فوراً
+
+      - name: Build Project
         run: |
           BUILD_FILE_PATH=$(find . -name "build.gradle" -o -name "build.gradle.kts" | head -n 1)
           PROJECT_DIR=$(dirname "$BUILD_FILE_PATH")
           cd "$PROJECT_DIR"
           
-          # تثبيت أداة Gradle مستقلة لتوليد ملف JAR مباشرة بدون تعقيدات الهياكل المفقودة
-          sudo apt-get update && sudo apt-get install -y gradle
-          gradle jar --no-daemon || gradle build -x test --no-daemon
+          # تشغيل البناء باستخدام النسخة الحديثة وتخطي الاختبارات لضمان السرعة
+          gradle build -x test --no-daemon
 
       - name: Save Mobile App Deliverable
         uses: actions/upload-artifact@v4
         with:
           name: solar-station-app
           path: |
-            **/build/libs/*.jar
             **/build/outputs/apk/**/*.apk
+            **/build/libs/*.jar
