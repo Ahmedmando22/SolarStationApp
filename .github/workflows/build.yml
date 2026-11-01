@@ -37,5 +37,5 @@ jobs:
           PROJECT_DIR=$(dirname "$BUILD_FILE_PATH")
           cd "$PROJECT_DIR"
           
-          # تعديل الأمر إلى build العام ليتوافق مع بنية مشروعك
-          gradle build -x test
+          # تشغيل أمر البناء الأساسي والبريء تماماً بدون أي إضافات
+          gradle build
